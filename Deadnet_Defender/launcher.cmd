@@ -1,175 +1,121 @@
 @echo off
-title Deadnet Defender - Network Security Monitor
+REM DeadNet Launcher - Auto-elevate to Administrator
+REM ================================================
 
-:: Save current directory
-set "SCRIPT_DIR=%~dp0"
-cd /d "%SCRIPT_DIR%"
+cd /d "%~dp0"
 
-:: Check for administrator privileges
+REM Check for admin privileges
 net session >nul 2>&1
-if %errorLevel% neq 0 (
-    echo.
-    echo ====================================================
-    echo  ADMINISTRATOR PRIVILEGES REQUIRED
-    echo ====================================================
-    echo.
-    echo This tool requires administrator privileges to
-    echo capture network packets.
-    echo.
-    echo Please right-click this file and select
-    echo "Run as administrator"
-    echo.
-    echo ====================================================
-    pause
-    exit /b 1
+if %errorLevel% == 0 (
+    goto :run
+) else (
+    goto :elevate
 )
 
-:: ASCII Art Banner
-echo.
-echo ====================================================
-echo  ____                _            _   
-echo ^|  _ \  ___  __ _  ^| ^|  _ __    ^| ^|_ 
-echo ^| ^| ^| ^|^/ _ \^/ _` ^| ^| ^| ^| '_ \   ^| __^|
-echo ^| ^|_^| ^|  __/ (_^| ^| ^| ^| ^| ^| ^| ^|  ^| ^|_ 
-echo ^|____/ \___^|\__^,_^| ^|_^| ^|_^| ^|_^|   \__^|
-echo.
-echo           DEFENDER
-echo.
-echo    Network Security Monitoring Tool
-echo ====================================================
+:elevate
+echo Requesting administrator privileges...
 echo.
 
-:: Check if Python is installed
+REM Create temporary VBS script for elevation
+set "tempVBS=%temp%\elevate_%random%.vbs"
+echo Set UAC = CreateObject^("Shell.Application"^) > "%tempVBS%"
+echo UAC.ShellExecute "cmd.exe", "/c ""%~f0""", "", "runas", 1 >> "%tempVBS%"
+
+REM Execute the VBS script
+cscript //nologo "%tempVBS%"
+del "%tempVBS%"
+exit /b
+
+:run
+cls
+echo ================================================
+echo DeadNet Attacker - Network Security Testing
+echo ================================================
+echo.
+echo Based on DeadNet by @flashnuke
+echo Windows Port by @risuncode
+echo.
+echo Running with Administrator privileges...
+echo.
+
+REM Check if Python is installed
 python --version >nul 2>&1
 if %errorLevel% neq 0 (
-    echo [ERROR] Python is not installed or not in PATH
+    echo ERROR: Python is not installed or not in PATH
     echo Please install Python 3.8 or higher
-    echo Download from: https://www.python.org/downloads/
+    echo.
     pause
     exit /b 1
 )
 
-echo [+] Python detected
-echo.
-
-:: Check if virtual environment exists
+REM Check if virtual environment exists
 if not exist "venv\" (
-    echo [*] Creating virtual environment...
+    echo Creating virtual environment... this may take some time, btw just ignore the error when build dependencies just relaunch the launcher...
     python -m venv venv
     if %errorLevel% neq 0 (
-        echo [ERROR] Failed to create virtual environment
+        echo ERROR: Failed to create virtual environment
         pause
         exit /b 1
     )
-    echo [+] Virtual environment created
+)
+
+REM Activate virtual environment
+call venv\Scripts\activate.bat
+
+REM Check if requirements are installed
+pip show scapy >nul 2>&1
+if %errorLevel% neq 0 (
+    echo Installing dependencies...
+    echo This may take a few minutes...
     echo.
-)
-
-:: Activate virtual environment
-echo [*] Activating virtual environment...
-if not exist "%SCRIPT_DIR%venv\Scripts\activate.bat" (
-    echo [ERROR] Virtual environment activation script not found
-    echo Looking in: %SCRIPT_DIR%venv\Scripts\
-    pause
-    exit /b 1
-)
-call "%SCRIPT_DIR%venv\Scripts\activate.bat"
-if %errorLevel% neq 0 (
-    echo [ERROR] Failed to activate virtual environment
-    pause
-    exit /b 1
-)
-echo [+] Virtual environment activated
-echo [*] Current directory: %CD%
-echo.
-
-:: Install/update dependencies
-echo [*] Installing dependencies...
-if not exist "%SCRIPT_DIR%requirements.txt" (
-    echo [ERROR] requirements.txt not found
-    echo Looking in: %SCRIPT_DIR%
-    echo Files in directory:
-    dir /b "%SCRIPT_DIR%"
-    pause
-    exit /b 1
-)
-pip install -r "%SCRIPT_DIR%requirements.txt" --quiet
-if %errorLevel% neq 0 (
-    echo [WARNING] Some dependencies may have failed to install
-    echo [*] Trying without --quiet flag...
-    pip install -r "%SCRIPT_DIR%requirements.txt"
-    pause
-)
-echo [+] Dependencies ready
-echo.
-
-:: Check for Npcap
-echo [*] Checking for Npcap...
-if not exist "C:\Windows\System32\Npcap\" (
-    if not exist "C:\Windows\System32\wpcap.dll" (
-        echo.
-        echo ====================================================
-        echo  WARNING: Npcap not detected
-        echo ====================================================
-        echo.
-        echo Npcap is required for packet capture on Windows.
-        echo.
-        echo Please download and install Npcap from:
-        echo https://npcap.com/
-        echo.
-        echo Make sure to install with "WinPcap API-compatible Mode"
-        echo ====================================================
-        echo.
-        choice /C YN /M "Continue anyway?"
-        if errorlevel 2 exit /b 1
+    pip install -r requirements.txt
+    if %errorLevel% neq 0 (
+        echo ERROR: Failed to install dependencies
+        pause
+        exit /b 1
     )
-) else (
-    echo [+] Npcap detected
-)
-echo.
-
-:: Check if main.py exists
-if not exist "%SCRIPT_DIR%main.py" (
-    echo [ERROR] main.py not found in script directory
-    echo Script directory: %SCRIPT_DIR%
-    echo Current directory: %CD%
     echo.
-    echo Please make sure all files are in the same folder
-    pause
-    exit /b 1
+    echo Dependencies installed successfully!
+    echo.
 )
 
-:: Start the application
-echo ====================================================
-echo  Starting Deadnet Defender...
-echo ====================================================
+REM Install Npcap if not already installed (required for Scapy on Windows)
 echo.
-echo [+] Web dashboard will be available at:
-echo     http://localhost:5001
+echo ================================================
+echo IMPORTANT: Scapy requires Npcap to be installed
+echo ================================================
 echo.
-echo [*] Press Ctrl+C to stop the defender
+echo If you haven't installed Npcap yet, please:
+echo 1. Download from: https://npcap.com/#download
+echo 2. Install with "WinPcap API-compatible Mode" enabled
+echo 3. Restart this launcher
+echo.
+echo Press any key to continue if Npcap is already installed...
+pause >nul
+
+cls
+echo ================================================
+echo DeadNet Attacker - Web Interface
+echo ================================================
+echo.
+echo Original: DeadNet by @flashnuke
+echo Windows Port ^& Web UI: @risuncode
+echo.
+echo Starting web control panel...
+echo Open: http://localhost:5000
 echo.
 
-python "%SCRIPT_DIR%main.py"
+REM Start the application
+python main.py
 
+REM If Python exits, pause to show any errors
 if %errorLevel% neq 0 (
     echo.
-    echo [ERROR] Deadnet Defender exited with error code: %errorLevel%
+    echo ================================================
+    echo Application exited with error code: %errorLevel%
+    echo ================================================
     echo.
-    echo Common issues:
-    echo - Missing dependencies (utils folder)
-    echo - Port 5001 already in use
-    echo - Import errors
-    echo.
-    pause
 )
 
-:: Deactivate virtual environment on exit
-call deactivate 2>nul
-
-echo.
-echo ====================================================
-echo  Deadnet Defender stopped
-echo ====================================================
 echo.
 pause
