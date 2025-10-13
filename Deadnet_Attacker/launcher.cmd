@@ -50,7 +50,7 @@ if %errorLevel% neq 0 (
 
 REM Check if virtual environment exists
 if not exist "venv\" (
-    echo Creating virtual environment...
+    echo Creating virtual environment... this may take some time, btw just ignore the error when build dependencies just relaunch the launcher...
     python -m venv venv
     if %errorLevel% neq 0 (
         echo ERROR: Failed to create virtual environment
@@ -93,6 +93,7 @@ echo.
 echo Press any key to continue if Npcap is already installed...
 pause >nul
 
+:start_app
 cls
 echo ================================================
 echo DeadNet Attacker - Web Interface
@@ -104,9 +105,22 @@ echo.
 echo Starting web control panel...
 echo Open: http://localhost:5000
 echo.
+echo Press R to restart the application
+echo.
 
 REM Start the application
-python main.py
+start /B cmd /C "python main.py 2>&1"
+set pid=%errorlevel%
+
+:wait_for_input
+choice /C R /N /M "Press R to restart the application"
+if %errorlevel% equ 1 (
+    echo.
+    echo [*] Restarting application...
+    taskkill /F /PID %pid% >nul 2>&1
+    goto start_app
+)
+goto wait_for_input
 
 REM If Python exits, pause to show any errors
 if %errorLevel% neq 0 (
