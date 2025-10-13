@@ -5,24 +5,29 @@ title Deadnet Defender - Network Security Monitor
 set "SCRIPT_DIR=%~dp0"
 cd /d "%SCRIPT_DIR%"
 
-:: Check for administrator privileges
+:: Check for admin privileges
 net session >nul 2>&1
-if %errorLevel% neq 0 (
-    echo.
-    echo ====================================================
-    echo  ADMINISTRATOR PRIVILEGES REQUIRED
-    echo ====================================================
-    echo.
-    echo This tool requires administrator privileges to
-    echo capture network packets.
-    echo.
-    echo Please right-click this file and select
-    echo "Run as administrator"
-    echo.
-    echo ====================================================
-    pause
-    exit /b 1
-) 
+if %errorLevel% == 0 (
+    goto :run
+) else (
+    goto :elevate
+)
+
+:elevate
+echo Requesting administrator privileges...
+echo.
+
+REM Create temporary VBS script for elevation
+set "tempVBS=%temp%\elevate_%random%.vbs"
+echo Set UAC = CreateObject^("Shell.Application"^) > "%tempVBS%"
+echo UAC.ShellExecute "cmd.exe", "/c ""%~f0""", "", "runas", 1 >> "%tempVBS%"
+
+REM Execute the VBS script
+cscript //nologo "%tempVBS%"
+del "%tempVBS%"
+exit /b
+
+:run
 
 :: Check if Python is installed
 python --version >nul 2>&1
