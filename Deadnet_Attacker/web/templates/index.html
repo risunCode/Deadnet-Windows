@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deadnet Attacker</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
+</head>
+<body class="bg-pattern min-h-screen">
+    
+    <!-- Header -->
+    <header class="bg-white dark:bg-slate-800 shadow-sm sticky top-0 z-50 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-skull-crossbones text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-gray-900 dark:text-white">Deadnet Attacker</h1>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Network Penetration Testing Tool</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-3">
+                    <div id="statusIndicator" class="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-slate-700">
+                        <span class="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+                        <span class="text-xs font-medium text-gray-600 dark:text-gray-300">Idle</span>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-slate-700">
+                        <i class="fas fa-clock text-gray-500 dark:text-gray-400 text-xs"></i>
+                        <span id="statUptime" class="text-xs font-mono font-medium text-gray-600 dark:text-gray-300">00:00</span>
+                    </div>
+                    
+                    <button onclick="toggleTheme()" class="w-10 h-10 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors">
+                        <i class="fas fa-sun text-gray-600 dark:hidden"></i>
+                        <i class="fas fa-moon text-gray-300 hidden dark:inline"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Control Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            
+            <!-- Control Panel -->
+            <div class="card p-6 fade-in">
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <i class="fas fa-sliders text-red-500 mr-2"></i>
+                    Control Panel
+                </h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Network Interface</label>
+                        <select id="interfaceSelect" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500">
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Attack Mode</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" id="chkArp" class="attack-checkbox" checked>
+                                <span class="text-sm text-gray-700 dark:text-gray-300">ARP Poisoning</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" id="chkIpv6" class="attack-checkbox" checked>
+                                <span class="text-sm text-gray-700 dark:text-gray-300">IPv6 RA Spoofing</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" id="chkDeadRouter" class="attack-checkbox" checked>
+                                <span class="text-sm text-gray-700 dark:text-gray-300">Dead Router Attack</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Attack Intensity</label>
+                        <select id="attackIntensity" onchange="updateIntervalDisplay()" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500">
+                            <option value="10">🐢 Slow (10s interval)</option>
+                            <option value="5" selected>⚡ Medium (5s interval)</option>
+                            <option value="2">🔥 Fast (2s interval)</option>
+                            <option value="1">💀 Maximum (1s interval)</option>
+                            <option value="custom">⚙️ Custom</option>
+                        </select>
+                        
+                        <div id="customIntervalDiv" class="hidden mt-2">
+                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Custom Interval (seconds)</label>
+                            <input type="number" id="customInterval" min="0.5" max="60" step="0.5" value="5" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <button id="startBtn" onclick="startAttack()" class="btn bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white py-3 px-4 rounded-xl font-black text-lg transition-all shadow-2xl border-2 border-red-400 disabled:opacity-40 disabled:cursor-not-allowed">
+                            <i class="fas fa-play mr-2"></i>
+                            START
+                        </button>
+                        <button id="stopBtn" onclick="stopAttack()" class="btn bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white py-3 px-4 rounded-xl font-black text-lg transition-all shadow-2xl border-2 border-gray-400">
+                            <i class="fas fa-stop mr-2"></i>
+                            STOP
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Network Info -->
+            <div class="card p-6 fade-in">
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <i class="fas fa-network-wired text-blue-500 mr-2"></i>
+                    Network Information
+                </h2>
+                
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div>
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Adapter</p>
+                        <p id="netAdapter" class="text-sm font-mono text-gray-900 dark:text-white truncate">-</p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Local IP</p>
+                        <p id="netLocalIP" class="text-sm font-mono text-gray-900 dark:text-white">-</p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Gateway</p>
+                        <p id="netGateway" class="text-sm font-mono text-gray-900 dark:text-white">-</p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Subnet Mask</p>
+                        <p id="netSubnet" class="text-sm font-mono text-gray-900 dark:text-white">-</p>
+                    </div>
+                    <div class="md:col-span-2">
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">MAC Address</p>
+                        <p id="netMAC" class="text-sm font-mono text-gray-900 dark:text-white">-</p>
+                    </div>
+                </div>
+                
+                <!-- Extended Control -->
+                <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                        <i class="fas fa-tools text-purple-500 mr-2"></i>
+                        Extended Control
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        <!-- Fake Source IP for ARP Spoofing -->
+                        <div class="bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
+                            <label class="flex items-center space-x-2 cursor-pointer mb-2">
+                                <input type="checkbox" id="chkFakeIP" class="attack-checkbox" onchange="toggleFakeIPInput()">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <i class="fas fa-mask text-purple-600 dark:text-purple-400"></i> Use Fake Source IP
+                                </span>
+                            </label>
+                            <input type="text" id="fakeIPInput" placeholder="Select interface first" disabled class="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-purple-300 dark:border-purple-700 rounded text-xs font-mono text-gray-900 dark:text-white placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <p class="text-xs text-purple-600 dark:text-purple-400 mt-1 ml-1">
+                                <i class="fas fa-info-circle"></i> Spoofs source IP in ARP packets (same subnet as gateway)
+                            </p>
+                        </div>
+                        
+                        <div class="bg-blue-50 dark:bg-blue-900/10 border-l-4 border-blue-500 p-2">
+                            <p class="text-xs text-blue-800 dark:text-blue-300">
+                                <i class="fas fa-info-circle mr-1"></i> <strong>Note:</strong> This spoofs IP at packet level only. Your Windows adapter IP remains unchanged.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+            
+            <!-- Left: Attack Logs (8 columns) -->
+            <div class="lg:col-span-8 card p-6 fade-in">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center">
+                        <i class="fas fa-list text-red-500 mr-2"></i>
+                        Attack Logs
+                    </h2>
+                    <button onclick="clearLogs()" class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <i class="fas fa-trash mr-1"></i> Clear
+                    </button>
+                </div>
+                
+                <div id="logsContainer" class="space-y-1.5 overflow-y-auto pr-2">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Waiting for attack...</p>
+                </div>
+            </div>
+            
+            <!-- Right: Attack Info (4 columns) -->
+            <div class="lg:col-span-4">
+                
+                <!-- Attack Info Card -->
+                <div class="card p-5 fade-in">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-400">Attack Info</h3>
+                        <i class="fas fa-info-circle text-red-500"></i>
+                    </div>
+                    
+                    <div class="space-y-3 text-sm">
+                        <div class="flex items-center justify-between pb-2 border-b border-gray-200 dark:border-gray-700">
+                            <span class="text-gray-600 dark:text-gray-400 font-medium">
+                                <i class="fas fa-sync-alt w-4 text-red-500"></i> Cycles
+                            </span>
+                            <span id="statCycles" class="font-mono font-bold text-gray-900 dark:text-white">0</span>
+                        </div>
+                        <div class="flex items-center justify-between pb-2 border-b border-gray-200 dark:border-gray-700">
+                            <span class="text-gray-600 dark:text-gray-400 font-medium">
+                                <i class="fas fa-paper-plane w-4 text-orange-500"></i> Packets Sent
+                            </span>
+                            <span id="statPackets" class="font-mono font-bold text-gray-900 dark:text-white">0</span>
+                        </div>
+                        <div class="flex items-center justify-between pb-2 border-b border-gray-200 dark:border-gray-700">
+                            <span class="text-gray-600 dark:text-gray-400 font-medium">
+                                <i class="fas fa-clock w-4 text-cyan-500"></i> Cycle Time
+                            </span>
+                            <span id="statCycleTime" class="font-mono font-bold text-gray-900 dark:text-white">0.0s</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 dark:text-gray-400 font-medium">
+                                <i class="fas fa-tachometer-alt w-4 text-purple-500"></i> Interval
+                            </span>
+                            <span id="statInterval" class="font-mono font-bold text-gray-900 dark:text-white">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        
+        <!-- Footer Warning -->
+        <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-6 rounded-lg">
+            <div class="flex items-start">
+                <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400 text-xl mr-3 mt-1"></i>
+                <div>
+                    <h3 class="text-lg font-bold text-red-800 dark:text-red-300 mb-2">⚠️ Legal Warning</h3>
+                    <p class="text-sm text-red-700 dark:text-red-400 mb-2">
+                        This tool is for <strong>authorized penetration testing only</strong>. Unauthorized use against networks you don't own or have explicit permission to test is <strong>illegal and unethical</strong>.
+                    </p>
+                    <p class="text-xs text-red-600 dark:text-red-500">
+                        By using this tool, you accept full responsibility for your actions and agree to comply with all applicable laws and regulations.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="text-center">
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                    <span class="font-semibold">Deadnet Attacker</span> v1.0 • Based on 
+                    <a href="https://github.com/flashnuke/deadnet" target="_blank" class="text-red-600 dark:text-red-400 font-semibold hover:underline">
+                        <i class="fab fa-github"></i> DeadNet
+                    </a>
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Web Interface by 
+                    <a href="https://github.com/risuncode" target="_blank" class="text-cyan-600 dark:text-cyan-400 font-semibold hover:underline">
+                        <i class="fab fa-github"></i> @risuncode
+                    </a>
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                    Authorized Penetration Testing Tool • Use Responsibly
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/attacker.js') }}"></script>
+</body>
+</html>

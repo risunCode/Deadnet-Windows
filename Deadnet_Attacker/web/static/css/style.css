@@ -1,0 +1,164 @@
+/* Deadnet Attacker - Main Stylesheet */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Background Pattern */
+.bg-pattern {
+    background-color: #f8fafc;
+    background-image: radial-gradient(circle at 1px 1px, #e2e8f0 1px, transparent 0);
+    background-size: 40px 40px;
+}
+
+.dark .bg-pattern {
+    background-color: #0f172a;
+    background-image: radial-gradient(circle at 1px 1px, #1e293b 1px, transparent 0);
+}
+
+/* Card Styles */
+.card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .card {
+    background: #1e293b;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.dark .card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+/* Stat Card */
+.stat-card {
+    background: linear-gradient(135deg, var(--color-from), var(--color-to));
+    border-radius: 12px;
+    padding: 1.25rem;
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px -1px rgba(0, 0, 0, 0.2);
+}
+
+/* Animations */
+.pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Log Items */
+.log-item {
+    border-left: 3px solid var(--log-color);
+    transition: all 0.2s ease;
+}
+
+.log-item:hover {
+    background: rgba(0,0,0,0.02);
+}
+
+.dark .log-item:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+/* Buttons */
+.btn {
+    transition: all 0.2s ease;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.btn:hover {
+    transform: scale(1.02);
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Attack Mode Badge */
+.attack-mode-badge {
+    position: relative;
+    overflow: hidden;
+}
+
+.attack-mode-badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    transform: translate(30%, -30%);
+}
+
+/* Checkbox Style */
+.attack-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}

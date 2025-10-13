@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deadnet Defender</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
+</head>
+<body class="bg-pattern min-h-screen">
+    
+    <!-- Header -->
+    <header class="bg-white dark:bg-slate-800 shadow-sm sticky top-0 z-50 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-shield-halved text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-gray-900 dark:text-white">Deadnet Defender</h1>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Network Security Monitor</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-3">
+                    <div id="statusIndicator" class="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-slate-700">
+                        <span class="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+                        <span class="text-xs font-medium text-gray-600 dark:text-gray-300">Idle</span>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-slate-700">
+                        <i class="fas fa-clock text-gray-500 dark:text-gray-400 text-xs"></i>
+                        <span id="statUptime" class="text-xs font-mono font-medium text-gray-600 dark:text-gray-300">00:00</span>
+                    </div>
+                    
+                    <button onclick="toggleTheme()" class="w-10 h-10 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors">
+                        <i class="fas fa-sun text-gray-600 dark:hidden"></i>
+                        <i class="fas fa-moon text-gray-300 hidden dark:inline"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Control Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            
+            <!-- Control Panel -->
+            <div class="card p-6 fade-in">
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <i class="fas fa-sliders text-green-500 mr-2"></i>
+                    Control Panel
+                </h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Network Interface</label>
+                        <select id="interfaceSelect" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <option value="">Loading...</option>
+                        </select>
+                        
+                        <div id="selectedInterfaceDisplay" class="hidden mt-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                            <span class="text-xs text-green-700 dark:text-green-400 font-medium" id="selectedInterfaceName"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <button id="startBtn" onclick="startMonitoring()" class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white py-3 px-4 rounded-xl font-black text-lg transition-all shadow-2xl border-2 border-green-400 disabled:opacity-40 disabled:cursor-not-allowed">
+                            <i class="fas fa-play mr-2"></i>
+                            START
+                        </button>
+                        <button id="stopBtn" onclick="stopMonitoring()" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white py-3 px-4 rounded-xl font-black text-lg transition-all shadow-2xl border-2 border-red-400">
+                            <i class="fas fa-stop mr-2"></i>
+                            STOP
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Network Info -->
+            <div class="card p-6 fade-in lg:col-span-2">
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <i class="fas fa-network-wired text-blue-500 mr-2"></i>
+                    Network Information
+                </h2>
+                
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div>
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Adapter</p>
+                        <p id="netAdapter" class="text-sm font-mono text-gray-900 dark:text-white truncate">-</p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Local IP</p>
+                        <p id="netLocalIP" class="text-sm font-mono text-gray-900 dark:text-white">-</p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Subnet Mask</p>
+                        <p id="netSubnet" class="text-sm font-mono text-gray-900 dark:text-white">-</p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Gateway</p>
+                        <p id="netGateway" class="text-sm font-mono text-gray-900 dark:text-white">-</p>
+                    </div>
+                    <div class="md:col-span-2">
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">MAC Address</p>
+                        <p id="netMAC" class="text-sm font-mono text-gray-900 dark:text-white">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+            
+            <!-- Left: Network Logs (8 columns) -->
+            <div class="lg:col-span-8 card p-6 fade-in">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center">
+                        <i class="fas fa-list text-red-500 mr-2"></i>
+                        Network Logs
+                    </h2>
+                    <button id="clearBtn" onclick="clearAlerts()" class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <i class="fas fa-trash mr-1"></i> Clear
+                    </button>
+                </div>
+                
+                <!-- Tabs -->
+                <div class="flex space-x-2 mb-4">
+                    <button id="tabAllPackets" onclick="switchLogTab('packets')" class="flex-1 py-2 text-sm font-medium rounded-lg bg-blue-500 text-white">
+                        <i class="fas fa-list mr-1"></i> All Packets
+                    </button>
+                    <button id="tabFlagged" onclick="switchLogTab('flagged')" class="flex-1 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-flag mr-1"></i> Flagged Threats
+                    </button>
+                </div>
+                
+                <!-- Packets View -->
+                <div id="logsContainer" class="space-y-1.5 max-h-[500px] overflow-y-auto pr-2">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Waiting for activity...</p>
+                </div>
+                
+                <!-- Flagged View -->
+                <div id="flaggedContainer" class="hidden space-y-2 max-h-[500px] overflow-y-auto pr-2">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">No threats detected</p>
+                </div>
+            </div>
+            
+            <!-- Right: Statistics Cards (4 columns) -->
+            <div class="lg:col-span-4 space-y-4">
+                
+                <!-- Total Packets -->
+                <div class="card p-5 fade-in">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-400">Total Packets</h3>
+                        <i class="fas fa-chart-line text-blue-500"></i>
+                    </div>
+                    <p id="statPackets" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                </div>
+                
+                <!-- Suspicious Packets with Breakdown -->
+                <div class="card p-5 fade-in">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-400">Suspicious Packets</h3>
+                        <i class="fas fa-exclamation-triangle text-red-500"></i>
+                    </div>
+                    <p id="statSuspicious" class="text-3xl font-bold text-red-600 dark:text-red-400 mb-3">0</p>
+                    
+                    <div class="space-y-2 pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-600 dark:text-gray-400">
+                                <i class="fas fa-broadcast-tower w-4 text-cyan-500"></i> ARP Packets
+                            </span>
+                            <span id="packetSuspiciousARP" class="font-mono font-semibold text-gray-900 dark:text-white">0</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-600 dark:text-gray-400">
+                                <i class="fas fa-skull-crossbones w-4 text-purple-500"></i> Dead Router
+                            </span>
+                            <span id="packetDeadRouter" class="font-mono font-semibold text-gray-900 dark:text-white">0</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-600 dark:text-gray-400">
+                                <i class="fas fa-shield-virus w-4 text-pink-500"></i> IPv6 Suspicious
+                            </span>
+                            <span id="packetSuspiciousIPv6" class="font-mono font-semibold text-gray-900 dark:text-white">0</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-600 dark:text-gray-400">
+                                <i class="fas fa-network-wired w-4 text-orange-500"></i> ARP Spoofing
+                            </span>
+                            <span id="packetARPSpoofing" class="font-mono font-semibold text-gray-900 dark:text-white">0</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs pt-2 border-t border-gray-200 dark:border-gray-700">
+                            <span class="text-gray-600 dark:text-gray-400 font-semibold">
+                                <i class="fas fa-flag w-4 text-orange-500"></i> Flagged IPs
+                            </span>
+                            <span id="statFlaggedIPs" class="font-mono font-bold text-orange-600 dark:text-orange-400">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        
+        <!-- Footer Info Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="card p-6 fade-in">
+                <div class="flex items-start space-x-3">
+                    <div class="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-shield-alt text-green-600 dark:text-green-400"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Real-time Protection</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Continuous monitoring of ARP, IPv6, and suspicious network activities</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card p-6 fade-in">
+                <div class="flex items-start space-x-3">
+                    <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-bolt text-blue-600 dark:text-blue-400"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Counter-Attack</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Force disconnect malicious hosts with ARP poisoning and ICMP attacks</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card p-6 fade-in">
+                <div class="flex items-start space-x-3">
+                    <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-windows text-purple-600 dark:text-purple-400"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Windows Optimized</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Built specifically for Windows with Npcap integration</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="text-center">
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                    <span class="font-semibold">Deadnet Defender</span> v1.0 • Based on 
+                    <a href="https://github.com/flashnuke/deadnet" target="_blank" class="text-green-600 dark:text-green-400 font-semibold hover:underline">
+                        <i class="fab fa-github"></i> DeadNet
+                    </a>
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Web Interface by 
+                    <a href="https://github.com/risuncode" target="_blank" class="text-cyan-600 dark:text-cyan-400 font-semibold hover:underline">
+                        <i class="fab fa-github"></i> @risuncode
+                    </a>
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                    Defensive Security Monitoring Tool • Protecting Networks from Malicious Activity
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/defender.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+/* Deadnet Defender - Main Stylesheet */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Background Pattern */
+.bg-pattern {
+    background-color: #f8fafc;
+    background-image: radial-gradient(circle at 1px 1px, #e2e8f0 1px, transparent 0);
+    background-size: 40px 40px;
+}
+
+.dark .bg-pattern {
+    background-color: #0f172a;
+    background-image: radial-gradient(circle at 1px 1px, #1e293b 1px, transparent 0);
+}
+
+/* Card Styles */
+.card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .card {
+    background: #1e293b;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.dark .card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+/* Stat Card */
+.stat-card {
+    background: linear-gradient(135deg, var(--color-from), var(--color-to));
+    border-radius: 12px;
+    padding: 1.25rem;
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px -1px rgba(0, 0, 0, 0.2);
+}
+
+.stat-card .stat-label {
+    font-size: 0.75rem;
+    opacity: 0.9;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* Animations */
+.pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Alert/Log Items */
+.log-item {
+    border-left: 3px solid var(--log-color);
+    transition: all 0.2s ease;
+}
+
+.log-item:hover {
+    background: rgba(0,0,0,0.02);
+}
+
+.dark .log-item:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+/* Buttons */
+.btn {
+    transition: all 0.2s ease;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.btn:hover {
+    transform: scale(1.02);
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Badge */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Info Card Special */
+.info-card {
+    transition: all 0.3s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-4px);
+}
+
+.info-card .icon-box {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Packet Card */
+.packet-card {
+    background: linear-gradient(135deg, var(--gradient-from), var(--gradient-to));
+    border-radius: 12px;
+    padding: 1rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.packet-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    transform: translate(30%, -30%);
+}
+
+.packet-card .packet-icon {
+    font-size: 1.5rem;
+    opacity: 0.9;
+    margin-bottom: 0.5rem;
+}
+
+.packet-card .packet-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.packet-card .packet-label {
+    font-size: 0.75rem;
+    opacity: 0.85;
+    font-weight: 500;
+}
+
+/* Threat Card */
+.threat-card {
+    border-left: 4px solid var(--threat-color);
+    background: rgba(0,0,0,0.02);
+    transition: all 0.2s ease;
+}
+
+.dark .threat-card {
+    background: rgba(255,255,255,0.03);
+}
+
+.threat-card:hover {
+    background: rgba(0,0,0,0.04);
+    transform: translateX(4px);
+}
+
+.dark .threat-card:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+/* Toggle Button */
+.toggle-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.toggle-btn.active {
+    background: #10b981;
+    color: white;
+}
+
+/* Log Filter Buttons */
+.filter-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.filter-btn.active {
+    border-color: currentColor;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .stat-card .stat-value {
+        font-size: 1.5rem;
+    }
+    
+    .packet-card .packet-value {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .card {
+        border-radius: 12px;
+    }
+    
+    .stat-card,
+    .packet-card {
+        border-radius: 10px;
+    }
+}
