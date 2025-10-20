@@ -3,6 +3,7 @@
 > **DeadNet Attacker** is a Windows-based network security testing tool designed to make wireless or wired networks unresponsive during authorized penetration testing. This tool utilizes various network attack techniques, such as ARP Poisoning (IPv4), IPv6 Router Advertisement Spoofing, Dead Router Attack, and source IP spoofing to test network resilience and response to real attacks.
 >
 > This is a Windows fork version of the repository: https://github.com/flashnuke/deadnet 
+<img width="741" height="410" alt="image" src="https://github.com/user-attachments/assets/598e54a5-0c16-4d63-8840-7dcfbf4a0832" />
 
 ---
 
