@@ -104,8 +104,7 @@ echo Windows Port ^& Web UI: @risuncode
 echo.
 echo Starting web control panel...
 echo Open: http://localhost:5000
-echo.
-echo Press R to restart the application
+echo. 
 echo.
 
 REM Start the application

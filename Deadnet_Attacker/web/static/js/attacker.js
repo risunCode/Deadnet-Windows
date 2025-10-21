@@ -80,6 +80,16 @@ function generateRandomMAC() {
     return mac;
 }
 
+function toggleTargetedInput() {
+    const checkbox = document.getElementById('chkTargeted');
+    const input = document.getElementById('targetIPsInput');
+    
+    input.disabled = !checkbox.checked;
+    if (!checkbox.checked) {
+        input.value = '';
+    }
+}
+
 function toggleFakeIPInput() {
     const checkbox = document.getElementById('chkFakeIP');
     const input = document.getElementById('fakeIPInput');
@@ -222,7 +232,23 @@ async function startAttack() {
     if (!result.isConfirmed) return;
     
     // Get extended control options
+    const targetIPs = document.getElementById('chkTargeted').checked ? document.getElementById('targetIPsInput').value : null;
     const fakeIP = document.getElementById('chkFakeIP').checked ? document.getElementById('fakeIPInput').value : null;
+    
+    // Validate target IPs
+    if (targetIPs && targetIPs.trim()) {
+        const ips = targetIPs.split(',').map(ip => ip.trim());
+        for (const ip of ips) {
+            if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Invalid Target IP',
+                    text: `Invalid IP format: ${ip}`
+                });
+                return;
+            }
+        }
+    }
     
     // Validate fake IP
     if (fakeIP && !/^(\d{1,3}\.){3}\d{1,3}$/.test(fakeIP)) {
@@ -242,7 +268,8 @@ async function startAttack() {
                 interface: iface,
                 attacks: attacks,
                 interval: interval,
-                fake_ip: fakeIP
+                fake_ip: fakeIP,
+                target_ips: targetIPs
             })
         });
         
@@ -256,6 +283,8 @@ async function startAttack() {
             document.getElementById('chkArp').disabled = true;
             document.getElementById('chkIpv6').disabled = true;
             document.getElementById('chkDeadRouter').disabled = true;
+            document.getElementById('chkTargeted').disabled = true;
+            document.getElementById('targetIPsInput').disabled = true;
             document.getElementById('chkFakeIP').disabled = true;
             document.getElementById('fakeIPInput').disabled = true;
             
@@ -289,9 +318,13 @@ async function stopAttack() {
             document.getElementById('chkArp').disabled = false;
             document.getElementById('chkIpv6').disabled = false;
             document.getElementById('chkDeadRouter').disabled = false;
+            document.getElementById('chkTargeted').disabled = false;
             document.getElementById('chkFakeIP').disabled = false;
             
             // Reset extended controls
+            document.getElementById('chkTargeted').checked = false;
+            document.getElementById('targetIPsInput').value = '';
+            document.getElementById('targetIPsInput').disabled = true;
             document.getElementById('chkFakeIP').checked = false;
             document.getElementById('fakeIPInput').value = '';
             document.getElementById('fakeIPInput').disabled = true;

@@ -52,3 +52,22 @@ def get_platform_info():
         'machine': platform.machine(),
         'processor': platform.processor()
     }
+
+
+def hide_console():
+    """Hide console window (only for exe builds on Windows)"""
+    if getattr(sys, 'frozen', False) and os_is_windows():
+        # Running as compiled exe on Windows
+        try:
+            import ctypes
+            kernel32 = ctypes.WinDLL('kernel32')
+            user32 = ctypes.WinDLL('user32')
+            
+            # Get console window handle
+            console_window = kernel32.GetConsoleWindow()
+            if console_window != 0:
+                # Hide the console window (SW_HIDE = 0)
+                user32.ShowWindow(console_window, 0)
+        except Exception:
+            # Silently fail if hiding doesn't work
+            pass
