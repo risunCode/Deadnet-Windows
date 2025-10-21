@@ -34,7 +34,7 @@ if %errorLevel% neq 0 (
 
 echo [+] Installing/Updating dependencies...
 python -m pip install --upgrade pip
-python -m pip install -r requirements-webview.txt
+python -m pip install -r requirements.txt
 
 if %errorLevel% neq 0 (
     echo [ERROR] Failed to install dependencies!
