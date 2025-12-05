@@ -1,0 +1,15 @@
+# Core dependencies (cross-platform)
+scapy>=2.5.0
+netifaces2>=0.0.22
+flask>=2.3.0
+flask-cors>=4.0.0
+
+# WebView support
+pywebview>=4.4.0
+
+# System tray (hide to tray)
+pystray>=0.19.0
+Pillow>=10.0.0
+
+# Build tool (only needed for building exe)
+pyinstaller>=6.0.0

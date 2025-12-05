@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeadNet</title>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body class="theme-hacker">
+  <div class="flex h-screen">
+    <!-- Sidebar -->
+    <aside class="w-56 bg-black/50 border-r border-gray-800 flex flex-col">
+      <!-- Logo -->
+      <div class="p-4 border-b border-gray-800">
+        <div class="flex items-center space-x-2">
+          <i class="fas fa-skull-crossbones text-2xl text-primary"></i>
+          <span class="font-bold text-xl">DeadNet</span>
+        </div>
+        <p class="text-xs opacity-50 mt-1">Network Security Tool</p>
+      </div>
+      
+      <!-- Navigation -->
+      <nav class="flex-1 p-2">
+        <button class="nav-btn active" data-page="attacker">
+          <i class="fas fa-crosshairs"></i>
+          <span>Attacker</span>
+        </button>
+        <button class="nav-btn" data-page="defender">
+          <i class="fas fa-shield-alt"></i>
+          <span>Defender</span>
+        </button>
+        <button class="nav-btn" data-page="scanner">
+          <i class="fas fa-wifi"></i>
+          <span>Scanner</span>
+        </button>
+        <button class="nav-btn" data-page="about">
+          <i class="fas fa-info-circle"></i>
+          <span>About</span>
+        </button>
+      </nav>
+      
+      <!-- Theme -->
+      <div class="p-3 border-t border-gray-800">
+        <label class="text-xs opacity-50 block mb-1">Theme</label>
+        <select id="themeSelector" class="w-full bg-black/50 border border-gray-700 rounded px-2 py-1 text-sm">
+          <option value="hacker">Hacker</option>
+          <option value="maroon">Maroon</option>
+          <option value="defender">Defender</option>
+          <option value="dark">Pure Dark</option>
+        </select>
+      </div>
+      
+      <!-- Panic Exit -->
+      <div class="p-3 border-t border-gray-800">
+        <div class="text-xs opacity-50 mb-2">Panic Exit</div>
+        <div class="flex gap-1">
+          <button id="panicNow" class="flex-1 btn-sm bg-red-800 hover:bg-red-700 text-xs" title="ALT+X">
+            <i class="fas fa-power-off"></i> NOW
+          </button>
+          <button id="panicTimer" class="flex-1 btn-sm bg-orange-800 hover:bg-orange-700 text-xs" title="ALT+F">
+            <i class="fas fa-clock"></i> TIMER
+          </button>
+        </div>
+        <div id="panicCountdown" class="text-center text-xs text-red-500 mt-1 hidden"></div>
+      </div>
+      
+      <!-- Footer -->
+      <div class="p-3 border-t border-gray-800 text-xs opacity-50">
+        <p>v2.0.0</p>
+        <a href="https://github.com/risunCode/Deadnet-Windows" target="_blank" class="hover:text-primary">
+          <i class="fab fa-github mr-1"></i>GitHub
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-auto">
+      <!-- ==================== ATTACKER ==================== -->
+      <section id="page-attacker" class="page-section active p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold flex items-center">
+              <i class="fas fa-crosshairs mr-3 text-primary"></i>Attacker
+            </h1>
+            <p class="text-sm opacity-50">Network attack simulation</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <div class="flex items-center">
+              <span id="attackStatus" class="status-dot status-inactive"></span>
+              <span id="attackStatusText" class="text-sm">Inactive</span>
+            </div>
+            <span id="attackUptime" class="font-mono text-sm opacity-70">--:--:--</span>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <div class="stat-box">
+            <span class="stat-value" id="statCycles">0</span>
+            <span class="stat-label">Cycles</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value" id="statPackets">0</span>
+            <span class="stat-label">Packets</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value" id="statHosts">0</span>
+            <span class="stat-label">Hosts</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value" id="statCycleDuration">0<small>ms</small></span>
+            <span class="stat-label">Duration</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-6">
+          <!-- Controls -->
+          <div class="card">
+            <h3 class="card-title"><i class="fas fa-cog"></i>Configuration</h3>
+            
+            <label class="label">Interface</label>
+            <select id="attackInterface" class="input-select"></select>
+            
+            <label class="label mt-3">Intensity</label>
+            <select id="attackInterval" class="input-select">
+              <option value="10">Slow (10s)</option>
+              <option value="5" selected>Medium (5s)</option>
+              <option value="2">Fast (2s)</option>
+              <option value="1">Maximum (1s)</option>
+            </select>
+            
+            <label class="label mt-3">Attack Types</label>
+            <div class="space-y-1">
+              <label class="checkbox-label"><input type="checkbox" id="arpPoison" checked><span>ARP Poisoning</span></label>
+              <label class="checkbox-label"><input type="checkbox" id="ipv6Ra" checked><span>IPv6 RA Spoof</span></label>
+              <label class="checkbox-label"><input type="checkbox" id="deadRouter" checked><span>Dead Router</span></label>
+            </div>
+            
+            <details class="mt-3">
+              <summary class="text-xs opacity-50 cursor-pointer">Advanced</summary>
+              <div class="mt-2 space-y-2">
+                <input type="text" id="fakeIp" class="input-text" placeholder="Fake IP (optional)">
+                <input type="text" id="targetIps" class="input-text" placeholder="Target IPs (comma sep)">
+                <input type="number" id="cidrLen" class="input-text" value="24" placeholder="CIDR">
+              </div>
+            </details>
+            
+            <button id="attackBtn" class="btn-action btn-danger mt-4">
+              <i class="fas fa-play"></i>START ATTACK
+            </button>
+          </div>
+          
+          <!-- Logs -->
+          <div class="col-span-2 card">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="card-title mb-0"><i class="fas fa-terminal"></i>Activity Log</h3>
+              <button id="clearLogs" class="text-xs opacity-50 hover:opacity-100"><i class="fas fa-trash"></i></button>
+            </div>
+            <div id="attackLogs" class="log-box">
+              <div class="log-entry opacity-50">[*] Ready</div>
+            </div>
+          </div>
+          
+          <!-- Network Info -->
+          <div class="card">
+            <h3 class="card-title"><i class="fas fa-network-wired"></i>Network Info</h3>
+            <div id="attackNetworkInfo" class="info-grid">
+              <span class="opacity-50">Select interface</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== DEFENDER ==================== -->
+      <section id="page-defender" class="page-section p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold flex items-center">
+              <i class="fas fa-shield-alt mr-3 text-primary"></i>Defender
+            </h1>
+            <p class="text-sm opacity-50">Real-time threat detection</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <div class="flex items-center">
+              <span id="defenderStatus" class="status-dot status-inactive"></span>
+              <span id="defenderStatusText" class="text-sm">Inactive</span>
+            </div>
+            <span id="defenderUptime" class="font-mono text-sm opacity-70">--:--:--</span>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <div class="stat-box">
+            <span class="stat-value" id="defStatPackets">0</span>
+            <span class="stat-label">Packets</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value text-red-500" id="defStatSuspicious">0</span>
+            <span class="stat-label">Suspicious</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value text-yellow-500" id="defStatFlaggedIps">0</span>
+            <span class="stat-label">Flagged IPs</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value text-yellow-500" id="defStatFlaggedMacs">0</span>
+            <span class="stat-label">Flagged MACs</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-6">
+          <!-- Controls -->
+          <div class="space-y-4">
+            <div class="card">
+              <h3 class="card-title"><i class="fas fa-cog"></i>Configuration</h3>
+              
+              <label class="label">Interface</label>
+              <select id="defenderInterface" class="input-select"></select>
+              
+              <button id="defenderBtn" class="btn-action btn-success mt-4">
+                <i class="fas fa-play"></i>START MONITORING
+              </button>
+            </div>
+            
+            <!-- Network Info -->
+            <div class="card">
+              <h3 class="card-title"><i class="fas fa-network-wired"></i>Network</h3>
+              <div id="defenderNetworkInfo" class="info-grid">
+                <span class="opacity-50">Select interface</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Alerts & Flagged -->
+          <div class="col-span-2 space-y-4">
+            <!-- Tabs -->
+            <div class="flex gap-2">
+              <button class="tab-btn active" data-tab="alerts">Alerts <span id="alertsCount" class="tab-count">0</span></button>
+              <button class="tab-btn" data-tab="flagged">Flagged <span id="flaggedCount" class="tab-count">0</span></button>
+              <button class="tab-btn" data-tab="kicks">Kicks <span id="kicksCount" class="tab-count">0</span></button>
+            </div>
+            
+            <!-- Alerts -->
+            <div id="tab-alerts" class="tab-content card">
+              <div id="alertsList" class="alert-box">
+                <div class="empty-state"><i class="fas fa-shield-alt"></i><p>No alerts</p></div>
+              </div>
+            </div>
+            
+            <!-- Flagged -->
+            <div id="tab-flagged" class="tab-content card hidden">
+              <div class="flex justify-between mb-3">
+                <span class="text-sm opacity-50">Flagged addresses</span>
+                <button id="clearFlags" class="text-xs text-yellow-500 hover:underline">Clear All</button>
+              </div>
+              <div id="flaggedList" class="table-box">
+                <table>
+                  <thead><tr><th>Type</th><th>Address</th><th>Count</th><th>Action</th></tr></thead>
+                  <tbody id="flaggedTableBody">
+                    <tr><td colspan="4" class="text-center opacity-50 py-4">No flagged addresses</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <!-- Kicks -->
+            <div id="tab-kicks" class="tab-content card hidden">
+              <div class="flex justify-between mb-3">
+                <span class="text-sm opacity-50">Counter-attack logs</span>
+                <button id="clearKicks" class="text-xs text-yellow-500 hover:underline">Clear</button>
+              </div>
+              <div id="kicksList" class="alert-box">
+                <div class="empty-state"><i class="fas fa-bolt"></i><p>No kicks yet</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SCANNER ==================== -->
+      <section id="page-scanner" class="page-section p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold flex items-center">
+              <i class="fas fa-wifi mr-3 text-primary"></i>Scanner
+            </h1>
+            <p class="text-sm opacity-50">Discover devices on network</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <div class="flex items-center">
+              <span id="scannerStatus" class="status-dot status-inactive"></span>
+              <span id="scannerStatusText" class="text-sm">Ready</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <div class="stat-box">
+            <span class="stat-value" id="scanDevices">0</span>
+            <span class="stat-label">Devices</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value" id="scanOnline">0</span>
+            <span class="stat-label">Online</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value" id="scanSubnet">-</span>
+            <span class="stat-label">Subnet</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value" id="scanTime">-</span>
+            <span class="stat-label">Last Scan</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-6">
+          <!-- Controls -->
+          <div class="card">
+            <h3 class="card-title"><i class="fas fa-cog"></i>Configuration</h3>
+            
+            <label class="label">Interface</label>
+            <select id="scannerInterface" class="input-select"></select>
+            
+            <label class="label mt-3">Scan Mode</label>
+            <select id="scanMode" class="input-select">
+              <option value="arp">ARP Scan (Fast)</option>
+              <option value="full">Full Scan</option>
+            </select>
+            
+            <label class="label mt-3">Timeout (sec)</label>
+            <input type="number" id="scanTimeout" class="input-text" value="3" min="1" max="10">
+            
+            <button id="scanBtn" class="btn-action btn-primary mt-4">
+              <i class="fas fa-search"></i>SCAN NETWORK
+            </button>
+            
+            <div class="mt-3">
+              <label class="checkbox-label">
+                <input type="checkbox" id="autoRefresh">
+                <span>Auto refresh (30s)</span>
+              </label>
+            </div>
+          </div>
+          
+          <!-- Device List -->
+          <div class="col-span-3 card">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="card-title mb-0"><i class="fas fa-laptop"></i>Discovered Devices</h3>
+              <div class="flex gap-2">
+                <input type="text" id="deviceSearch" class="input-text text-sm" placeholder="Search..." style="width: 150px">
+                <button id="exportDevices" class="btn-sm bg-gray-600"><i class="fas fa-download"></i></button>
+              </div>
+            </div>
+            <div id="deviceList" class="table-box" style="max-height: 400px; overflow-y: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>IP Address</th>
+                    <th>MAC Address</th>
+                    <th>Vendor</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="deviceTableBody">
+                  <tr><td colspan="5" class="text-center opacity-50 py-8">Click "Scan Network" to discover devices</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== ABOUT ==================== -->
+      <section id="page-about" class="page-section p-6">
+        <div class="max-w-2xl mx-auto">
+          <div class="text-center mb-8">
+            <i class="fas fa-skull-crossbones text-6xl text-primary mb-4"></i>
+            <h1 class="text-3xl font-bold">DeadNet</h1>
+            <p class="opacity-50">Network Security Testing & Defense</p>
+            <p class="text-xs opacity-30 mt-2">v2.0.0</p>
+          </div>
+          
+          <div class="grid grid-cols-3 gap-4 mb-8">
+            <div class="card text-center">
+              <i class="fas fa-crosshairs text-2xl text-red-500 mb-2"></i>
+              <h3 class="font-bold">Attacker</h3>
+              <p class="text-xs opacity-50">ARP Poisoning, IPv6 RA Spoof, Dead Router</p>
+            </div>
+            <div class="card text-center">
+              <i class="fas fa-shield-alt text-2xl text-blue-500 mb-2"></i>
+              <h3 class="font-bold">Defender</h3>
+              <p class="text-xs opacity-50">Real-time detection & counter-attack</p>
+            </div>
+            <div class="card text-center">
+              <i class="fas fa-wifi text-2xl text-green-500 mb-2"></i>
+              <h3 class="font-bold">Scanner</h3>
+              <p class="text-xs opacity-50">Network device discovery</p>
+            </div>
+          </div>
+          
+          <div class="card">
+            <h3 class="font-bold mb-2 text-yellow-500"><i class="fas fa-exclamation-triangle mr-2"></i>Disclaimer</h3>
+            <p class="text-sm opacity-70">For authorized testing only. Unauthorized use is illegal.</p>
+          </div>
+          
+          <div class="card mt-4">
+            <h3 class="font-bold mb-2"><i class="fas fa-code mr-2 text-primary"></i>Credits</h3>
+            <p class="text-sm opacity-70">Based on <a href="https://github.com/flashnuke/deadnet" class="text-primary">DeadNet</a> by @flashnuke</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
