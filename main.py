@@ -642,7 +642,8 @@ def main():
     if not is_admin():
         print(f"{RED}[!]{WHITE} Administrator privileges required!")
         print(f"{YELLOW}[!]{WHITE} Run as {'administrator' if os_is_windows() else 'sudo'}")
-        input("Press Enter to exit...")
+        if sys.stdin and sys.stdin.isatty():
+            input("Press Enter to exit...")
         sys.exit(1)
     
     logging.getLogger('werkzeug').setLevel(logging.ERROR)
@@ -656,7 +657,8 @@ def main():
     if not os.path.exists(os.path.join(DIST_DIR, 'index.html')):
         print(f"{RED}[!]{WHITE} Web assets not found in: {DIST_DIR}")
         print(f"{YELLOW}[!]{WHITE} Run 'npm run build' first or use launcher.cmd")
-        input("Press Enter to exit...")
+        if sys.stdin and sys.stdin.isatty():
+            input("Press Enter to exit...")
         sys.exit(1)
     
     mode = 'browser' if args.browser else ('webview' if args.webview else ('webview' if os_is_windows() else 'browser'))
