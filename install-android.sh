@@ -60,11 +60,14 @@ echo -e "${GREEN}=========================================="
 echo "  Installation Complete!"
 echo "==========================================${NC}"
 echo ""
+PYTHON_PATH=$(which python)
 echo -e "  Run DeadNet:"
-echo -e "  ${YELLOW}cd ~/deadnet && su -c \"python main.py --browser\"${NC}"
+echo -e "  ${YELLOW}cd ~/deadnet && su -c \"$PYTHON_PATH main.py --browser\"${NC}"
 echo ""
 echo -e "  Then open: ${BLUE}http://127.0.0.1:5000${NC}"
 echo ""
+
+PYTHON_PATH=$(which python)
 
 read -p "Start now? (y/n): " start
 if [ "$start" = "y" ]; then
@@ -73,5 +76,5 @@ if [ "$start" = "y" ]; then
     echo -e "${BLUE}[*] Starting...${NC}"
     echo "    Open browser: http://127.0.0.1:5000"
     echo ""
-    su -c "cd $INSTALL_DIR && python main.py --browser"
+    su -c "cd $INSTALL_DIR && $PYTHON_PATH main.py --browser"
 fi
