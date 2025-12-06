@@ -345,11 +345,14 @@ async function startScan() {
     scanner.scanning = true
     updateScannerUI()
     
+    const customRange = $('#scanRange')?.value?.trim() || ''
+    
     const res = await fetch(`${API}/api/scanner/scan`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         interface: iface,
-        timeout: +$('#scanTimeout').value || 3
+        timeout: +$('#scanTimeout').value || 3,
+        range: customRange || null
       })
     })
     const data = await res.json()

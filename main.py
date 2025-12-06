@@ -558,7 +558,7 @@ def arp_scan_broadcast(interface, subnet, timeout=3):
     
     return devices
 
-def scan_network_fast(interface, timeout=3):
+def scan_network_fast(interface, timeout=3, custom_range=None):
     """Fast network scan using broadcast ARP"""
     devices = {}
     my_ip = ''
@@ -577,8 +577,14 @@ def scan_network_fast(interface, timeout=3):
         
         my_ip = iface_info['ip']
         gateway = iface_info.get('gateway', '')
-        base_ip = '.'.join(my_ip.split('.')[:3])
-        subnet = f"{base_ip}.0/24"
+        
+        # Use custom range or auto-detect
+        if custom_range:
+            subnet = custom_range
+            base_ip = '.'.join(custom_range.split('/')[0].split('.')[:3])
+        else:
+            base_ip = '.'.join(my_ip.split('.')[:3])
+            subnet = f"{base_ip}.0/24"
         
         with scanner_lock:
             scanner_state['subnet'] = subnet
@@ -589,7 +595,8 @@ def scan_network_fast(interface, timeout=3):
         logger.info("Reading ARP cache...")
         arp_cache = get_arp_cache()
         for ip, mac in arp_cache.items():
-            if ip.startswith(base_ip):
+            # Include all from cache if custom range, otherwise filter by base_ip
+            if custom_range or ip.startswith(base_ip):
                 devices[ip] = mac
         
         with scanner_lock:
@@ -645,10 +652,17 @@ def build_device_list(devices, gateway, my_ip):
 def start_scan():
     data = request.json
     interface = data.get('interface')
-    timeout = data.get('timeout', 2)
+    timeout = data.get('timeout', 3)
+    custom_range = data.get('range')  # e.g. "192.168.100.0/24" or "192.168.1.1-192.168.1.50"
     
     if not interface:
         return jsonify({'success': False, 'error': 'Interface required'}), 400
+    
+    # Validate custom range if provided
+    if custom_range:
+        if '/' not in custom_range and '-' not in custom_range:
+            # Single IP or invalid - assume /24
+            custom_range = f"{custom_range.rsplit('.', 1)[0]}.0/24"
     
     with scanner_lock:
         if scanner_state['scanning']:
@@ -659,7 +673,7 @@ def start_scan():
     
     def do_scan():
         try:
-            devices = scan_network_fast(interface, timeout)
+            devices = scan_network_fast(interface, timeout, custom_range)
             with scanner_lock:
                 scanner_state['devices'] = devices
                 scanner_state['last_scan'] = time.time()
