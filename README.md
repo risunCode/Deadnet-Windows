@@ -104,25 +104,33 @@ launcher.cmd
 chmod +x launcher.sh && sudo ./launcher.sh
 ```
 
-### Android (Termux) - One Line Install & Run
-
-```bash
-curl -sL https://raw.githubusercontent.com/risunCode/Deadnet-Windows/main/install-android.sh | bash
-```
+### Android (Termux)
 
 **Requirements:**
 - [Termux](https://f-droid.org/packages/com.termux/) from F-Droid (NOT Play Store)
-- Rooted device (Magisk recommended)
+- Rooted device (Magisk/KernelSU)
 
-The script will auto-install everything and start DeadNet. Open browser: `http://127.0.0.1:5000`
-
-**Run again later:**
+**Step 1: Install dependencies**
 ```bash
-deadnet                      # After restart terminal
-cd ~/deadnet && ./deadnet    # Or directly
+pkg update && pkg install -y python git wget clang libffi openssl
 ```
 
-**Access from other device:** Use your Android IP (shown when starting)
+**Step 2: Download installer**
+```bash
+wget https://raw.githubusercontent.com/risunCode/Deadnet-Windows/main/install-android.sh
+```
+
+**Step 3: Run installer**
+```bash
+bash install-android.sh
+```
+
+**Run DeadNet (after install):**
+```bash
+cd ~/deadnet && tsu -c "python main.py --browser"
+```
+
+Then open browser: `http://127.0.0.1:5000`
 
 ---
 

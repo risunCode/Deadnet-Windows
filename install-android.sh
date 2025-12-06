@@ -1,8 +1,8 @@
 #!/bin/bash
-# DeadNet - Android (Termux) One-Line Installer
-# curl -sL https://raw.githubusercontent.com/risunCode/Deadnet-Windows/main/install-android.sh | bash
-
-set -e
+# DeadNet - Android (Termux) Installer
+# Step 1: pkg update && pkg install -y python git wget clang libffi openssl
+# Step 2: wget https://raw.githubusercontent.com/risunCode/Deadnet-Windows/main/install-android.sh
+# Step 3: bash install-android.sh
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -23,74 +23,55 @@ echo ""
 
 # Check Termux
 if [ ! -d "/data/data/com.termux" ]; then
-    echo -e "${RED}[!] Termux only! Get it from F-Droid${NC}"
+    echo -e "${RED}[!] Termux only! Get from F-Droid${NC}"
     exit 1
 fi
 
-# Check root access
-echo -e "${BLUE}[*]${NC} Checking root access..."
-HAS_ROOT=false
-if command -v su &> /dev/null; then
-    # Test if su actually works
-    if su -c "id" &>/dev/null; then
-        echo -e "${GREEN}[+] Root available (su)${NC}"
-        HAS_ROOT=true
-    fi
-fi
-
-if [ "$HAS_ROOT" = false ]; then
+# Check root
+echo -e "${BLUE}[*]${NC} Checking root..."
+if su -c "id" &>/dev/null; then
+    echo -e "${GREEN}[+] Root OK${NC}"
+else
     echo -e "${RED}[!] Root NOT detected!${NC}"
-    echo -e "${YELLOW}    DeadNet requires root for network attacks.${NC}"
-    echo ""
-    echo "    Make sure your device is rooted (Magisk/KernelSU)"
-    echo "    and Termux has root permission."
-    echo ""
-    read -p "    Continue anyway? (y/n): " cont
-    if [ "$cont" != "y" ]; then
-        echo "Aborted."
-        exit 1
-    fi
+    echo "    Need rooted device (Magisk/KernelSU)"
+    read -p "    Continue? (y/n): " cont
+    [ "$cont" != "y" ] && exit 1
 fi
 
-echo -e "${BLUE}[1/3]${NC} Installing dependencies..."
-pkg update -y && pkg install -y python git root-repo tsu clang python-pip libffi openssl
+echo ""
+echo -e "${BLUE}[1/2]${NC} Installing Python packages..."
+pip install scapy netifaces flask flask-cors || {
+    echo -e "${RED}[!] pip install failed. Try:${NC}"
+    echo "    pkg install python-pip"
+    exit 1
+}
 
-echo -e "${BLUE}[2/3]${NC} Installing Python packages..."
-pip install scapy netifaces flask flask-cors
-
-echo -e "${BLUE}[3/3]${NC} Cloning DeadNet..."
+echo ""
+echo -e "${BLUE}[2/2]${NC} Cloning DeadNet..."
 INSTALL_DIR="$HOME/deadnet"
 rm -rf "$INSTALL_DIR" 2>/dev/null
-git clone https://github.com/risunCode/Deadnet-Windows.git "$INSTALL_DIR"
-cd "$INSTALL_DIR"
-
-# Create launcher
-cat > "$INSTALL_DIR/deadnet" << 'EOF'
-#!/bin/bash
-cd "$(dirname "$0")"
-IP=$(ip addr show wlan0 2>/dev/null | grep "inet " | awk '{print $2}' | cut -d/ -f1)
-PORT=${1:-5000}
-echo ""
-echo "  DeadNet - Android"
-echo "  Local:   http://127.0.0.1:$PORT"
-[ -n "$IP" ] && echo "  Network: http://$IP:$PORT"
-echo "  Press Ctrl+C to stop"
-echo ""
-tsu -c "python main.py --browser --port $PORT" 2>/dev/null || su -c "python main.py --browser --port $PORT"
-EOF
-chmod +x "$INSTALL_DIR/deadnet"
-
-# Add alias
-grep -q "alias deadnet" "$HOME/.bashrc" 2>/dev/null || echo "alias deadnet='$INSTALL_DIR/deadnet'" >> "$HOME/.bashrc"
+git clone https://github.com/risunCode/Deadnet-Windows.git "$INSTALL_DIR" || {
+    echo -e "${RED}[!] git clone failed${NC}"
+    exit 1
+}
 
 echo ""
-echo -e "${GREEN}[+] Installation Complete!${NC}"
+echo -e "${GREEN}=========================================="
+echo "  Installation Complete!"
+echo "==========================================${NC}"
 echo ""
-echo -e "  Next time run: ${YELLOW}deadnet${NC} (after restart terminal)"
-echo -e "  Or: ${YELLOW}cd ~/deadnet && ./deadnet${NC}"
+echo -e "  Run DeadNet:"
+echo -e "  ${YELLOW}cd ~/deadnet && tsu -c \"python main.py --browser\"${NC}"
 echo ""
-echo -e "${BLUE}[*] Starting DeadNet...${NC}"
+echo -e "  Then open: ${BLUE}http://127.0.0.1:5000${NC}"
 echo ""
 
-# Auto-run
-exec "$INSTALL_DIR/deadnet"
+read -p "Start now? (y/n): " start
+if [ "$start" = "y" ]; then
+    cd "$INSTALL_DIR"
+    echo ""
+    echo -e "${BLUE}[*] Starting...${NC}"
+    echo "    Open browser: http://127.0.0.1:5000"
+    echo ""
+    tsu -c "python main.py --browser" || su -c "python main.py --browser"
+fi
