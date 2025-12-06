@@ -5,8 +5,8 @@ import Swal from 'sweetalert2'
 const API = ''
 let attacker = { active: false, poll: null }
 let defender = { active: false, poll: null }
-let scanner = { scanning: false, poll: null, devices: [] }
-let kicks = []
+// Target settings (saved locally)
+let targetSettings = { targetIps: '', fakeIp: '' }
 
 // ===== UTILS =====
 const $ = s => document.querySelector(s)
@@ -30,11 +30,20 @@ function initNav() {
 }
 
 function initTabs() {
+  // Defender tabs
   $$('.tab-btn').forEach(btn => btn.onclick = () => {
     $$('.tab-btn').forEach(b => b.classList.remove('active'))
     btn.classList.add('active')
     $$('.tab-content').forEach(c => c.classList.add('hidden'))
     $(`#tab-${btn.dataset.tab}`).classList.remove('hidden')
+  })
+  
+  // Attacker tabs
+  $$('.atk-tab-btn').forEach(btn => btn.onclick = () => {
+    $$('.atk-tab-btn').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    $$('.atk-tab-content').forEach(c => c.classList.add('hidden'))
+    $(`#atktab-${btn.dataset.atktab}`).classList.remove('hidden')
   })
 }
 
@@ -50,7 +59,6 @@ async function loadInterfaces() {
     
     $('#attackInterface').innerHTML = opts
     $('#defenderInterface').innerHTML = opts
-    $('#scannerInterface').innerHTML = opts
   } catch(e) { console.error(e) }
 }
 
@@ -100,9 +108,9 @@ async function startAttack() {
         interface: iface,
         interval: +$('#attackInterval').value,
         enable_ipv6: $('#ipv6Ra').checked,
-        fake_ip: $('#fakeIp').value || null,
-        target_ips: $('#targetIps').value || null,
-        cidrlen: +$('#cidrLen').value
+        fake_ip: $('#fakeIp').value.trim() || null,
+        target_ips: $('#targetedMode').checked ? ($('#targetIps').value.trim() || null) : null,
+        cidrlen: $('#targetedMode').checked ? 24 : (+$('#cidrLen').value || 24)
       })
     })
     const data = await res.json()
@@ -118,6 +126,27 @@ async function stopAttack() {
     updateAttackerUI()
     clearInterval(attacker.poll)
   } catch(e) { console.error(e) }
+}
+
+async function forceStopAttack() {
+  // Force stop - reset everything regardless of state
+  try {
+    await fetch(`${API}/api/stop`, { method: 'POST' })
+  } catch(e) {}
+  
+  attacker.active = false
+  if (attacker.poll) clearInterval(attacker.poll)
+  attacker.poll = null
+  updateAttackerUI()
+  
+  // Reset stats display
+  $('#statCycles').textContent = '0'
+  $('#statPackets').textContent = '0'
+  $('#statHosts').textContent = '0'
+  $('#statCycleDuration').innerHTML = '0<small>ms</small>'
+  $('#attackUptime').textContent = '--:--:--'
+  
+  toast('info', 'Force stopped')
 }
 
 function updateAttackerUI() {
@@ -254,257 +283,78 @@ function renderFlagged(data) {
   Object.entries(data.macs || {}).forEach(([mac, info]) => items.push({ type: 'MAC', addr: mac, count: info.total_incidents || 0 }))
   
   const tbody = $('#flaggedTableBody')
-  if (!items.length) { tbody.innerHTML = '<tr><td colspan="4" class="text-center opacity-50 py-4">No flagged</td></tr>'; return }
+  if (!items.length) { tbody.innerHTML = '<tr><td colspan="3" class="text-center opacity-50 py-4">No flagged</td></tr>'; return }
   
   tbody.innerHTML = items.map(i => `
     <tr>
       <td><span class="px-1.5 py-0.5 rounded text-xs ${i.type === 'IP' ? 'bg-orange-600' : 'bg-yellow-600 text-black'}">${i.type}</span></td>
       <td class="font-mono">${i.addr}</td>
       <td>${i.count}</td>
-      <td>
-        ${i.type === 'IP' ? `<button class="btn-sm bg-red-600 mr-1" onclick="kick('${i.addr}')"><i class="fas fa-bolt"></i></button>` : ''}
-        <button class="btn-sm bg-gray-600" onclick="unflag('${i.addr}','${i.type.toLowerCase()}')"><i class="fas fa-times"></i></button>
-      </td>
     </tr>
   `).join('')
 }
 
-function renderKicks() {
-  const el = $('#kicksList')
-  $('#kicksCount').textContent = kicks.length
-  if (!kicks.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-bolt"></i><p>No kicks</p></div>'; return }
-  
-  el.innerHTML = kicks.map((k, i) => `
-    <div class="alert-item ${k.status === 'attacking' ? 'medium' : k.status === 'stopped' ? 'low' : k.ok ? 'low' : 'critical'}">
-      <div class="flex justify-between items-center">
-        <span class="badge">${k.status === 'attacking' ? 'ATTACKING' : k.status === 'stopped' ? 'STOPPED' : k.ok ? 'SENT' : 'ERROR'}</span>
-        <span class="text-xs opacity-50">${new Date(k.time).toLocaleTimeString()}</span>
-      </div>
-      <div class="flex justify-between items-center mt-1">
-        <span class="text-sm">Target: <span class="font-mono">${k.ip}</span></span>
-        ${k.status === 'attacking' ? `<button class="btn-sm bg-red-600" onclick="stopKick(${i})"><i class="fas fa-stop"></i> Stop</button>` : ''}
-      </div>
-    </div>
-  `).join('')
-}
-
-window.kick = async function(ip) {
-  const ok = await Swal.fire({
-    icon: 'warning', title: 'Kick?', text: `Disconnect ${ip}?`,
-    showCancelButton: true, confirmButtonText: 'KICK', confirmButtonColor: '#dc2626',
-    background: '#111', color: '#fff'
-  })
-  if (!ok.isConfirmed) return
-  
-  // Add to kicks with attacking status
-  const kickEntry = { ip, status: 'attacking', ok: true, time: Date.now() }
-  kicks.unshift(kickEntry)
-  renderKicks()
-  
-  try {
-    const res = await fetch(`${API}/api/defender/disconnect_ip`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ip })
-    })
-    const data = await res.json()
-    kickEntry.ok = data.success
-    if (!data.success) kickEntry.status = 'error'
-    renderKicks()
-    toast(data.success ? 'success' : 'error', data.success ? 'Attack sent' : data.error)
-  } catch(e) { 
-    kickEntry.ok = false
-    kickEntry.status = 'error'
-    renderKicks()
+// ===== TARGET SETTINGS =====
+function loadTargetSettings() {
+  const saved = localStorage.getItem('targetSettings')
+  if (saved) {
+    targetSettings = JSON.parse(saved)
   }
+  $('#targetedMode').checked = targetSettings.targetedMode || false
+  $('#targetIps').value = targetSettings.targetIps || ''
+  $('#fakeIp').value = targetSettings.fakeIp || ''
+  $('#cidrLen').value = targetSettings.cidrLen || 24
+  updateTargetUI()
 }
 
-window.stopKick = function(index) {
-  if (kicks[index]) {
-    kicks[index].status = 'stopped'
-    renderKicks()
-    toast('info', 'Kick stopped')
-  }
+function saveTargetSettings() {
+  targetSettings.targetedMode = $('#targetedMode').checked
+  targetSettings.targetIps = $('#targetIps').value.trim()
+  targetSettings.fakeIp = $('#fakeIp').value.trim()
+  targetSettings.cidrLen = +$('#cidrLen').value || 24
+  localStorage.setItem('targetSettings', JSON.stringify(targetSettings))
+  updateTargetUI()
+  toast('success', 'Settings saved')
 }
 
-window.unflag = async function(addr, type) {
-  try {
-    await fetch(`${API}/api/defender/unflag`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address: addr, type })
-    })
-    toast('success', 'Removed')
-  } catch(e) {}
-}
-
-// ===== SCANNER =====
-async function startScan() {
-  const iface = $('#scannerInterface').value
-  if (!iface) return toast('error', 'Select interface')
+function updateTargetUI() {
+  const targeted = $('#targetedMode').checked
   
-  try {
-    scanner.scanning = true
-    updateScannerUI()
+  // Show/hide relevant inputs
+  if (targeted) {
+    $('#targetIpsGroup').classList.remove('hidden')
+    $('#cidrGroup').classList.add('hidden')
     
-    const customRange = $('#scanRange')?.value?.trim() || ''
-    
-    const res = await fetch(`${API}/api/scanner/scan`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        interface: iface,
-        timeout: +$('#scanTimeout').value || 3,
-        range: customRange || null
-      })
-    })
-    const data = await res.json()
-    if (data.success) {
-      pollScanner()
-    } else {
-      scanner.scanning = false
-      updateScannerUI()
-      toast('error', data.error)
-    }
-  } catch(e) {
-    scanner.scanning = false
-    updateScannerUI()
-    toast('error', 'Connection failed')
-  }
-}
-
-function updateScannerUI() {
-  const btn = $('#scanBtn')
-  if (scanner.scanning) {
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>SCANNING...'
-    btn.disabled = true
-    btn.className = 'btn-action btn-secondary'
-    $('#scannerStatus').className = 'status-dot status-active'
-    $('#scannerStatusText').textContent = 'Scanning'
+    // Auto-set attack types for targeted mode (only ARP is effective)
+    $('#arpPoison').checked = true
+    $('#ipv6Ra').checked = false
+    $('#deadRouter').checked = false
+    $('#ipv6Ra').disabled = true
+    $('#deadRouter').disabled = true
   } else {
-    btn.innerHTML = '<i class="fas fa-search"></i>SCAN NETWORK'
-    btn.disabled = false
-    btn.className = 'btn-action btn-primary'
-    $('#scannerStatus').className = 'status-dot status-inactive'
-    $('#scannerStatusText').textContent = 'Ready'
-  }
-}
-
-function pollScanner() {
-  const check = async () => {
-    try {
-      const status = await fetch(`${API}/api/scanner/status`).then(r => r.json())
-      
-      if (!status.scanning) {
-        scanner.scanning = false
-        updateScannerUI()
-        
-        // Get devices
-        const data = await fetch(`${API}/api/scanner/devices`).then(r => r.json())
-        scanner.devices = data.devices || []
-        renderDevices()
-        
-        $('#scanDevices').textContent = scanner.devices.length
-        $('#scanOnline').textContent = scanner.devices.length
-        $('#scanSubnet').textContent = data.subnet || '-'
-        $('#scanTime').textContent = data.last_scan ? new Date(data.last_scan * 1000).toLocaleTimeString() : '-'
-        
-        return
-      }
-      
-      setTimeout(check, 500)
-    } catch(e) {
-      scanner.scanning = false
-      updateScannerUI()
-    }
-  }
-  check()
-}
-
-// Track active attacks per device
-let deviceAttacks = {}
-
-function renderDevices() {
-  const tbody = $('#deviceTableBody')
-  const search = ($('#deviceSearch')?.value || '').toLowerCase()
-  
-  let devices = scanner.devices
-  if (search) {
-    devices = devices.filter(d => 
-      d.ip.includes(search) || 
-      d.mac.toLowerCase().includes(search) || 
-      d.vendor.toLowerCase().includes(search) ||
-      d.hostname.toLowerCase().includes(search)
-    )
+    $('#targetIpsGroup').classList.add('hidden')
+    $('#cidrGroup').classList.remove('hidden')
+    
+    // Re-enable all attack types for subnet mode
+    $('#ipv6Ra').disabled = false
+    $('#deadRouter').disabled = false
   }
   
-  if (!devices.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center opacity-50 py-8">No devices found</td></tr>'
-    return
-  }
-  
-  tbody.innerHTML = devices.map(d => {
-    const isAttacking = deviceAttacks[d.ip]?.active
-    return `
-    <tr class="${d.is_gateway ? 'bg-yellow-900/20' : d.is_self ? 'bg-blue-900/20' : ''}">
-      <td class="font-mono">
-        ${d.ip}
-        ${d.is_gateway ? '<span class="ml-1 text-xs text-yellow-500">(GW)</span>' : ''}
-        ${d.is_self ? '<span class="ml-1 text-xs text-blue-500">(You)</span>' : ''}
-      </td>
-      <td class="font-mono text-xs">${d.mac}</td>
-      <td class="text-sm">${d.vendor}</td>
-      <td><span class="px-2 py-0.5 rounded text-xs bg-green-600">Online</span></td>
-      <td>
-        ${d.is_self ? '-' : isAttacking 
-          ? `<button class="btn-sm bg-green-600" onclick="stopDeviceAttack('${d.ip}')"><i class="fas fa-stop"></i></button>`
-          : `<button class="btn-sm bg-red-600" onclick="startDeviceAttack('${d.ip}')"><i class="fas fa-bolt"></i></button>`
-        }
-      </td>
-    </tr>
-  `}).join('')
-}
-
-window.startDeviceAttack = async function(ip) {
-  const iface = $('#scannerInterface').value
-  if (!iface) return toast('error', 'Select interface first')
-  
-  try {
-    const res = await fetch(`${API}/api/defender/disconnect_ip`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ip })
-    })
-    const data = await res.json()
-    if (data.success) {
-      deviceAttacks[ip] = { active: true, time: Date.now() }
-      renderDevices()
-      toast('success', `Attacking ${ip}`)
+  // Update status
+  const el = $('#targetStatus')
+  if (targeted) {
+    const ips = $('#targetIps').value.trim()
+    const count = ips ? ips.split(',').filter(ip => ip.trim()).length : 0
+    if (count > 0) {
+      el.innerHTML = `<i class="fas fa-crosshairs text-red-500"></i> Targeted: ${count} IP(s) - ARP only`
     } else {
-      toast('error', data.error)
+      el.innerHTML = `<i class="fas fa-exclamation-triangle text-yellow-500"></i> Enter target IPs above`
     }
-  } catch(e) {
-    toast('error', 'Failed')
+  } else {
+    const cidr = $('#cidrLen').value || 24
+    const hosts = Math.pow(2, 32 - cidr) - 2
+    el.innerHTML = `<i class="fas fa-globe text-blue-500"></i> Subnet mode: ~${hosts} hosts (/${cidr})`
   }
-}
-
-window.stopDeviceAttack = function(ip) {
-  deviceAttacks[ip] = { active: false }
-  renderDevices()
-  toast('info', `Stopped ${ip}`)
-}
-
-function exportDevices() {
-  if (!scanner.devices.length) return toast('error', 'No devices to export')
-  
-  const csv = 'IP,MAC,Vendor,Hostname\n' + scanner.devices.map(d => 
-    `${d.ip},${d.mac},${d.vendor},${d.hostname}`
-  ).join('\n')
-  
-  const blob = new Blob([csv], { type: 'text/csv' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `network-scan-${new Date().toISOString().slice(0,10)}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
-  toast('success', 'Exported')
 }
 
 // ===== PANIC EXIT =====
@@ -590,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initNav()
   initTabs()
   loadInterfaces()
-  renderKicks()
+  loadTargetSettings()
   
   $('#themeSelector').onchange = e => setTheme(e.target.value)
   
@@ -605,6 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   $('#attackBtn').onclick = () => attacker.active ? stopAttack() : startAttack()
+  $('#forceStopBtn').onclick = () => forceStopAttack()
   $('#defenderBtn').onclick = () => defender.active ? stopDefender() : startDefender()
   $('#clearLogs').onclick = () => $('#attackLogs').innerHTML = '<div class="log-entry opacity-50">[*] Cleared</div>'
   $('#clearFlags').onclick = async () => {
@@ -613,24 +464,12 @@ document.addEventListener('DOMContentLoaded', () => {
       toast('success', 'Cleared')
     }
   }
-  $('#clearKicks').onclick = () => { kicks = []; renderKicks() }
   
-  // Scanner events
-  $('#scanBtn').onclick = () => !scanner.scanning && startScan()
-  $('#deviceSearch').oninput = () => renderDevices()
-  $('#exportDevices').onclick = () => exportDevices()
-  
-  // Auto refresh
-  let autoRefreshInterval = null
-  $('#autoRefresh').onchange = e => {
-    if (e.target.checked) {
-      autoRefreshInterval = setInterval(() => {
-        if (!scanner.scanning) startScan()
-      }, 30000)
-    } else {
-      clearInterval(autoRefreshInterval)
-    }
-  }
+  // Target settings
+  $('#saveTargets').onclick = () => saveTargetSettings()
+  $('#targetedMode').onchange = () => updateTargetUI()
+  $('#targetIps').oninput = () => updateTargetUI()
+  $('#cidrLen').oninput = () => updateTargetUI()
   
   // Panic Exit events
   $('#panicNow').onclick = async () => {
@@ -660,17 +499,6 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault()
       if (panicTimer) cancelPanicTimer()
       else setPanicTimer()
-    }
-    if (e.altKey && e.key.toLowerCase() === 'v') {
-      e.preventDefault()
-      try {
-        const res = await fetch(`${API}/api/hide`, { method: 'POST' })
-        const data = await res.json()
-        if (!data.success) {
-          // Fallback to minimize if hide fails
-          await fetch(`${API}/api/minimize`, { method: 'POST' })
-        }
-      } catch(err) {}
     }
   })
   

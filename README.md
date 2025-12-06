@@ -1,10 +1,18 @@
 # 🔴 DeadNet - Network Security Testing & Defense Tool
 
-> **DeadNet** is a Windows-based network security tool that combines **offensive testing (Attacker)** and **defensive monitoring (Defender)** in a single unified interface. Test network resilience with ARP Poisoning, IPv6 RA Spoofing, Dead Router attacks, while simultaneously detecting and countering these threats in real-time.
+> **Make a wireless network unresponsive**
 >
-> This is an enhanced Windows fork of: https://github.com/flashnuke/deadnet
+> Tested on Kali Nethunter | Works for both IPv6 and IPv4
 
-![DeadNet Screenshot](https://github.com/user-attachments/assets/aca06067-555f-4efa-a4bf-8a972f93bacb)
+**DeadNet** is a cross-platform network security tool that combines **offensive testing (Attacker)** and **defensive monitoring (Defender)** in a single unified interface. Test network resilience with ARP Poisoning, IPv6 RA Spoofing, Dead Router attacks, while simultaneously detecting and countering these threats in real-time.
+
+> This is an enhanced fork of: https://github.com/flashnuke/deadnet
+
+## 📸 Screenshots
+
+| Attacker | Defender | About |
+|:--------:|:--------:|:-----:|
+| ![attacker](https://github.com/user-attachments/assets/c4af7053-99a0-4bcf-9850-ef10a8cbdf52) | ![defender](https://github.com/user-attachments/assets/a11019ed-2bf8-4b3a-ad92-ccf67fe298e7) | ![about](https://github.com/user-attachments/assets/af839672-fe69-4a43-bd8a-82c061396233) |
 
 ---
 
@@ -21,63 +29,123 @@ DeadNet is a Python application specifically designed for Windows 10/11. With a 
 ### Defender Module
 - Real-time packet monitoring and threat detection
 - Detect ARP spoofing, IPv6 RA spoofing, and Dead Router attacks
-- Auto-flag suspicious IPs and MAC addresses
-- Counter-attack capability (KICK) to disconnect attackers
+- Auto-flag suspicious IPs and MAC addresses 
 
 > **WARNING: Use only on networks you own or have written permission for! Misuse of this tool is illegal!**
 
 ---
 
-## 🚀 Installation
+## 🔬 How it Works
 
-### 1. Prerequisites
+### IPv6
 
-- **Windows 10/11**
-- **Python 3.8 or newer**
-  - Download at [python.org](https://www.python.org/downloads/)
-  - Make sure to check "Add Python to PATH" during installation
-- **Node.js 18 or newer**
-  - Download at [nodejs.org](https://nodejs.org/)
-  
-  (Optional, already tested without npcap it worked)
-- **Npcap** (required for Scapy on Windows)
-  - Download at [npcap.com](https://npcap.com/#download)
-  - Install with "WinPcap API-compatible Mode" option
-  - Restart PC after installation
+In IPv6, the ARP mechanism was ditched due to several reasons, one of them being lack of security. Instead there is **Neighbor/Router Discovery Protocol**, which will be exploited in this attack.
 
-### 2. DeadNet Installation
+**Dead Router Attack** - This attack periodically sends a spoofed RA (router discovery) packet with the gateway's link-local address to the multicast address on the local link, which signals that the router is dead. This would prevent the hosts from forwarding traffic to the gateway. Furthermore, a scapy method is running on a separate thread in the background, sniffing traffic. It immediately invalidates all incoming RA packets from routers by sending spoofed ones that indicate the router is not operational (`routerlifetime=0`).
 
-1. **Clone or download the repository**
-```bash
-git clone https://github.com/risunCode/Deadnet-Windows.git
-cd Deadnet-Windows
-```
+### IPv4
 
-2. **Run the launcher and install dependencies**
-```bash
-launcher.cmd
-```
-- Select option `[5] Install Dependencies`
-- This will:
-  - Create a Python virtual environment (`.venv`)
-  - Install all Python packages locally (not globally)
-  - Install Node.js dependencies
-  - Build web assets
+**ARP Attack** - Continuously sends spoofed ARP packets (using scapy) to every host on the network, poisoning its ARP table. The gateway is mapped to an incorrect MAC address and therefore the traffic never reaches its true destination, making the network unresponsive. Furthermore, the gateway also receives an ARP packet from each host that contains a spoofed MAC address.
 
-3. **Start DeadNet**
-- Select option `[1]` WebView or `[3]` Browser mode
-- Launcher automatically requests admin rights and opens the control panel
+### WiFi Deauth (Alternative)
+
+There's another way to perform a DoS attack on wireless networks **WITHOUT HAVING CREDENTIALS**, and that is by sending de-auth packets. This requires a network adapter that supports packet injection. If no credentials are present and you insist on using DeadNet, it's possible to run a dictionary-attack using a wordlist in combination with another tool that cracks WiFi handshakes to gain credentials first.
 
 ---
 
-## 🎮 How to Use
+## 📦 Requirements
+
+### Operating System
+
+Works on **Windows, Linux, Mac, and Android (Termux with root)**. 
+
+| Platform | Support | Notes |
+|----------|---------|-------|
+| Windows 10/11 | ✅ Full | WebView + Browser mode |
+| Linux | ✅ Full | Browser mode (WebView optional) |
+| Mac | ✅ Full | Browser mode |
+| Android (Termux) | ✅ Full | Requires root, Browser mode only |
+
+### Virtual Machine
+
+⚠️ If running from a VM, the network adapter **must be set to Bridged mode** for the attacks to work properly.
+
+### Dependencies
+
+Install 3rd party libraries by running:
+
+```bash
+pip install -r requirements.txt
+```
+
+Required packages:
+- `scapy` - Packet manipulation
+- `netifaces` - Network interface info
+- `flask` - Web server
+- `flask-cors` - CORS support
+- `pywebview` - Desktop window (optional)
+
+---
+ 
+## 🚀 Installation
+
+### Windows / Linux / Mac
+
+```bash
+# Clone repository
+git clone https://github.com/risunCode/Deadnet-Windows.git
+cd Deadnet-Windows
+
+# Run launcher
+# Windows:
+launcher.cmd
+
+# Linux/Mac:
+chmod +x launcher.sh && sudo ./launcher.sh
+```
+
+### Android (Termux) - One Line Install
+
+```bash
+curl -sL https://raw.githubusercontent.com/risunCode/Deadnet-Windows/main/install-android.sh | bash
+```
+
+Or with wget:
+```bash
+wget -qO- https://raw.githubusercontent.com/risunCode/Deadnet-Windows/main/install-android.sh | bash
+```
+
+**Requirements:**
+- [Termux](https://f-droid.org/packages/com.termux/) from F-Droid (NOT Play Store)
+- Rooted device (for network attacks)
+- `tsu` package for root access
+
+After installation, run:
+```bash
+deadnet
+# Or
+cd ~/deadnet && ./deadnet
+```
+
+Then open browser: `http://127.0.0.1:5000`
+
+---
+
+## 🚀 Usage
 
 ### Starting DeadNet
 
 **Option 1: Using Launcher (Recommended)**
-- Double-click `launcher.cmd`
-- Select mode: WebView (desktop window) or Browser
-- Control panel opens automatically
+```bash
+# Windows
+launcher.cmd
+
+# Linux/Mac
+sudo ./launcher.sh
+
+# Android (Termux)
+deadnet
+```
 
 **Option 2: Command Line**
 ```bash
@@ -90,55 +158,42 @@ Options:
   --no-open        Don't auto-open browser
 ```
 
-### Using the Attacker
-
-1. **Select Network Interface**
-   - Choose the network adapter you want to use for the attack
-
-2. **Choose Attack Mode**
-   - ARP Poisoning (IPv4)
-   - IPv6 RA Spoofing
-   - Dead Router Attack
-   - (Can select one or more)
-
-3. **Set Attack Intensity**
-   - Slow (10s interval): stealthy, minimal detection
-   - Medium (5s): default mode
-   - Fast (2s): aggressive
-   - Maximum (1s): full speed
-
-4. **Advanced Options (Optional)**
-   - Fake Local IP: automatic/self-generated IP spoofing
-   - Target IPs: attack specific hosts only
-   - CIDR Length: subnet configuration
-
-5. **Start / Stop Attack**
-   - Click **START** to begin, **STOP** to end
-   - Monitor statistics: packet count, attack cycles, duration
-   - Monitor activity logs in real-time
-
-### Using the Defender
-
-1. **Select Network Interface**
-   - Choose the interface to monitor
-
-2. **Start Monitoring**
-   - Click **START MONITORING**
-   - Real-time alerts appear as threats are detected
-
-3. **View Flagged Threats**
-   - Switch to "Flagged Threats" tab
-   - See all suspicious IPs and MACs
-
-4. **Counter-Attack (KICK)**
-   - Click **KICK** on any flagged IP
-   - Defender will attempt to disconnect the attacker
-
 ---
 
-## 🎨 Themes
+## 🔌 API Endpoints
 
-DeadNet includes 4 built-in themes:
+### Attacker API
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/status` | Get attack status & statistics |
+| GET | `/api/logs` | Get activity logs |
+| GET | `/api/interfaces` | List network interfaces |
+| POST | `/api/start` | Start attack |
+| POST | `/api/stop` | Stop attack |
+
+### Defender API
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/defender/status` | Get monitor status |
+| GET | `/api/defender/alerts` | Get security alerts |
+| GET | `/api/defender/flagged` | Get flagged IPs/MACs |
+| POST | `/api/defender/start` | Start monitoring |
+| POST | `/api/defender/stop` | Stop monitoring |
+| POST | `/api/defender/unflag` | Remove flagged address |
+| POST | `/api/defender/clear_flags` | Clear all flags |
+
+### System API
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/shutdown` | Panic exit - stop all & shutdown |
+| POST | `/api/minimize` | Minimize window |
+
+--- 
+
+## 🎨 Themes
 
 | Theme | Description |
 |-------|-------------|
@@ -149,111 +204,24 @@ DeadNet includes 4 built-in themes:
 
 ---
 
-## 🔧 Technical Details
+## ⚠️ Disclaimer
 
-### Attack Mechanisms
+**This tool is only for testing and can only be used where strict consent has been given. Do not use it for illegal purposes!**
 
-- **ARP Poisoning**: Sends fake ARP to all hosts, replacing gateway MAC with random MAC.
-- **IPv6 RA Spoofing**: Sends fake router advertisements (lifetime=0) so hosts consider the router dead.
-- **Dead Router Attack**: Sniffs & responds to all RA from real router with fake RA, hosts cannot update router list.
-- **Fake IP/MAC**: Attack packets can use fake IP/MAC to mislead network logs.
-
-### Detection Algorithms
-
-- **ARP Spoofing Detection**: Tracks IP-to-MAC mappings, detects changes
-- **Broadcast Reply Detection**: Identifies ARP replies to broadcast (poisoning indicator)
-- **Multi-IP MAC Detection**: Flags MACs claiming multiple IPs
-- **Random MAC Detection**: Identifies attack tool signatures
-- **IPv6 Dead Router Detection**: Detects router lifetime 0 attacks
-- **RA Flood Detection**: Identifies excessive router advertisements
-
-### Severity Levels
-
-- 🔴 **CRITICAL** - Confirmed attacks (ARP spoofing, Dead Router)
-- 🟠 **HIGH** - Highly suspicious activity
-- 🟡 **MEDIUM** - Potentially suspicious
-- 🔵 **LOW** - Minor anomalies
+It is the end user's responsibility to obey all applicable local, state and federal laws. I assume no liability and am not responsible for any misuse or damage caused by this tool and software.
 
 ---
 
-## 📦 Build Executable
+## 📜 License
 
-To build a standalone `.exe` file:
-
-1. Run `launcher.cmd`
-2. Select option `[4] Build Executable (.exe)`
-3. Wait for build to complete
-4. Find `DeadNet.exe` in the `dist` folder
-
----
-
-## 📁 Project Structure
-
-```
-Deadnet-Windows/
-├── main.py              # Unified backend server
-├── launcher.cmd         # Windows launcher (run/build/install)
-├── launcher.sh          # Linux launcher
-├── requirements.txt     # Python dependencies
-├── package.json         # Node.js dependencies
-├── backend/
-│   ├── attacker.py      # Attack orchestrator
-│   ├── detector.py      # Packet detection engine
-│   ├── database.py      # Threat database
-│   ├── network_utils.py # Network utilities
-│   └── defines.py       # Constants
-├── src/
-│   ├── index.html       # Main HTML
-│   ├── css/style.css    # Tailwind styles
-│   └── js/main.js       # Frontend logic
-└── dist/                # Built web assets & executable
-```
-
----
-
-## 🔌 API Endpoints
-
-### Attacker API
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/status` | Attack status |
-| GET | `/api/logs` | Activity logs |
-| GET | `/api/interfaces` | Network interfaces |
-| POST | `/api/start` | Start attack |
-| POST | `/api/stop` | Stop attack |
-
-### Defender API
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/defender/status` | Monitor status |
-| GET | `/api/defender/alerts` | Security alerts |
-| GET | `/api/defender/flagged` | Flagged addresses |
-| POST | `/api/defender/start` | Start monitoring |
-| POST | `/api/defender/stop` | Stop monitoring |
-| POST | `/api/defender/disconnect_ip` | Counter-attack (KICK) |
-
----
-
-## ⚠️ Legal & Ethics
-
-- **Only for LEGITIMATE testing and with PERMISSION**
-- **Do not use to damage/attack networks without permission**
-- Full responsibility lies with the user
-
----
-
-## 📚 Reference Sources
-
-- [Scapy Documentation](https://scapy.readthedocs.io/)
-- [ARP Spoofing Explained](https://www.imperva.com/learn/application-security/arp-spoofing/)
-- [IPv6 Security Guide](https://www.cisco.com/c/en/us/products/security/ipv6-security.html)
+Distributed under the **GNU General Public License v3.0**.
 
 ---
 
 ## 👏 Credits
 
 - Original [DeadNet](https://github.com/flashnuke/deadnet) by [@flashnuke](https://github.com/flashnuke)
-- Windows fork & enhancements by [@risunCode](https://github.com/risunCode)
+- Enhanced fork by [@risunCode](https://github.com/risunCode)
 
 ---
 

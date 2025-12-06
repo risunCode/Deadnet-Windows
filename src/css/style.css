@@ -75,6 +75,22 @@ body {
   @apply flex items-center gap-2 text-sm cursor-pointer hover:opacity-80;
 }
 .checkbox-label input { accent-color: var(--primary); }
+.checkbox-label input:disabled { @apply opacity-30 cursor-not-allowed; }
+.checkbox-label:has(input:disabled) { @apply opacity-40 cursor-not-allowed; }
+
+/* Toggle Switch */
+.toggle-checkbox {
+  @apply w-12 h-6 rounded-full appearance-none cursor-pointer relative;
+  background: #333;
+  transition: background 0.2s;
+}
+.toggle-checkbox:checked { background: var(--primary); }
+.toggle-checkbox::before {
+  content: '';
+  @apply absolute w-5 h-5 rounded-full bg-white top-0.5 left-0.5;
+  transition: transform 0.2s;
+}
+.toggle-checkbox:checked::before { transform: translateX(24px); }
 
 /* Buttons */
 .btn-action {
@@ -84,6 +100,10 @@ body {
 .btn-success { @apply bg-green-600 hover:bg-green-700 text-white; }
 .btn-sm {
   @apply px-2 py-1 rounded text-xs font-semibold;
+}
+.btn-force-stop {
+  @apply w-full py-2 rounded text-xs flex items-center justify-center gap-2 transition-all;
+  @apply bg-gray-800 hover:bg-red-900 text-gray-400 hover:text-white border border-gray-700 hover:border-red-800;
 }
 
 /* Status */
@@ -111,13 +131,13 @@ body {
 .info-row span:last-child { @apply font-mono; }
 
 /* Tabs */
-.tab-btn {
+.tab-btn, .atk-tab-btn {
   @apply px-4 py-2 rounded-t text-sm opacity-50 hover:opacity-80 transition-all;
   background: var(--card);
   border: 1px solid var(--border);
   border-bottom: none;
 }
-.tab-btn.active {
+.tab-btn.active, .atk-tab-btn.active {
   @apply opacity-100;
   color: var(--primary);
   border-bottom: 2px solid var(--primary);
@@ -127,8 +147,8 @@ body {
   @apply ml-1 px-1.5 py-0.5 rounded text-xs;
   background: rgba(255,255,255,0.1);
 }
-.tab-content { @apply min-h-[300px]; }
-.tab-content.hidden { display: none; }
+.tab-content, .atk-tab-content { @apply min-h-[300px]; }
+.tab-content.hidden, .atk-tab-content.hidden { display: none; }
 
 /* Alerts */
 .alert-box { @apply max-h-80 overflow-y-auto space-y-2; }

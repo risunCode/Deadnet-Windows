@@ -29,10 +29,6 @@
           <i class="fas fa-shield-alt"></i>
           <span>Defender</span>
         </button>
-        <button class="nav-btn" data-page="scanner">
-          <i class="fas fa-wifi"></i>
-          <span>Scanner</span>
-        </button>
         <button class="nav-btn" data-page="about">
           <i class="fas fa-info-circle"></i>
           <span>About</span>
@@ -114,8 +110,8 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-4 gap-6">
-          <!-- Controls -->
+        <div class="grid grid-cols-3 gap-6">
+          <!-- Left: Config -->
           <div class="card">
             <h3 class="card-title"><i class="fas fa-cog"></i>Configuration</h3>
             
@@ -137,36 +133,85 @@
               <label class="checkbox-label"><input type="checkbox" id="deadRouter" checked><span>Dead Router</span></label>
             </div>
             
-            <details class="mt-3">
-              <summary class="text-xs opacity-50 cursor-pointer">Advanced</summary>
-              <div class="mt-2 space-y-2">
-                <input type="text" id="fakeIp" class="input-text" placeholder="Fake IP (optional)">
-                <input type="text" id="targetIps" class="input-text" placeholder="Target IPs (comma sep)">
-                <input type="number" id="cidrLen" class="input-text" value="24" placeholder="CIDR">
-              </div>
-            </details>
-            
             <button id="attackBtn" class="btn-action btn-danger mt-4">
               <i class="fas fa-play"></i>START ATTACK
             </button>
+            <button id="forceStopBtn" class="btn-force-stop mt-2">
+              <i class="fas fa-skull"></i> FORCE STOP
+            </button>
           </div>
           
-          <!-- Logs -->
-          <div class="col-span-2 card">
-            <div class="flex justify-between items-center mb-3">
-              <h3 class="card-title mb-0"><i class="fas fa-terminal"></i>Activity Log</h3>
-              <button id="clearLogs" class="text-xs opacity-50 hover:opacity-100"><i class="fas fa-trash"></i></button>
+          <!-- Right: Tabs -->
+          <div class="col-span-2 space-y-4">
+            <!-- Tabs -->
+            <div class="flex gap-2">
+              <button class="atk-tab-btn active" data-atktab="logs">Logs</button>
+              <button class="atk-tab-btn" data-atktab="targets">Targets</button>
+              <button class="atk-tab-btn" data-atktab="network">Network</button>
             </div>
-            <div id="attackLogs" class="log-box">
-              <div class="log-entry opacity-50">[*] Ready</div>
+            
+            <!-- Logs Tab -->
+            <div id="atktab-logs" class="atk-tab-content card">
+              <div class="flex justify-between items-center mb-3">
+                <span class="text-sm opacity-50">Activity log</span>
+                <button id="clearLogs" class="text-xs opacity-50 hover:opacity-100"><i class="fas fa-trash"></i> Clear</button>
+              </div>
+              <div id="attackLogs" class="log-box">
+                <div class="log-entry opacity-50">[*] Ready</div>
+              </div>
             </div>
-          </div>
-          
-          <!-- Network Info -->
-          <div class="card">
-            <h3 class="card-title"><i class="fas fa-network-wired"></i>Network Info</h3>
-            <div id="attackNetworkInfo" class="info-grid">
-              <span class="opacity-50">Select interface</span>
+            
+            <!-- Targets Tab -->
+            <div id="atktab-targets" class="atk-tab-content card hidden">
+              <div class="flex justify-between mb-3">
+                <span class="text-sm opacity-50">Targeting options</span>
+                <button id="saveTargets" class="text-xs text-green-500 hover:underline"><i class="fas fa-save"></i> Save</button>
+              </div>
+              <div class="space-y-4">
+                <!-- Targeted Mode Toggle -->
+                <div class="p-3 rounded border border-gray-700 bg-black/30">
+                  <label class="flex items-center justify-between cursor-pointer">
+                    <div>
+                      <span class="text-sm font-semibold">Targeted Mode</span>
+                      <p class="text-xs opacity-50">Attack specific IPs only</p>
+                    </div>
+                    <input type="checkbox" id="targetedMode" class="toggle-checkbox">
+                  </label>
+                </div>
+                
+                <!-- Target IPs (shown when targeted mode ON) -->
+                <div id="targetIpsGroup" class="hidden">
+                  <label class="label">Target IPs</label>
+                  <input type="text" id="targetIps" class="input-text" placeholder="e.g. 192.168.1.10, 192.168.1.20">
+                  <span class="text-xs opacity-50">Comma separated</span>
+                </div>
+                
+                <!-- CIDR (shown when targeted mode OFF) -->
+                <div id="cidrGroup">
+                  <label class="label">Subnet CIDR</label>
+                  <input type="number" id="cidrLen" class="input-text" value="24" min="16" max="30">
+                  <span class="text-xs opacity-50">Attack all hosts in subnet (e.g. /24 = 254 hosts)</span>
+                </div>
+                
+                <!-- Fake IP -->
+                <div>
+                  <label class="label">Fake Source IP (optional)</label>
+                  <input type="text" id="fakeIp" class="input-text" placeholder="Leave empty for random stealth IP">
+                  <span class="text-xs opacity-50">Auto-random if empty</span>
+                </div>
+                
+                <div id="targetStatus" class="text-xs p-2 rounded bg-black/30"></div>
+              </div>
+            </div>
+            
+            <!-- Network Tab -->
+            <div id="atktab-network" class="atk-tab-content card hidden">
+              <div class="mb-3">
+                <span class="text-sm opacity-50">Network information</span>
+              </div>
+              <div id="attackNetworkInfo" class="info-grid">
+                <span class="opacity-50">Select interface</span>
+              </div>
             </div>
           </div>
         </div>
@@ -240,7 +285,6 @@
             <div class="flex gap-2">
               <button class="tab-btn active" data-tab="alerts">Alerts <span id="alertsCount" class="tab-count">0</span></button>
               <button class="tab-btn" data-tab="flagged">Flagged <span id="flaggedCount" class="tab-count">0</span></button>
-              <button class="tab-btn" data-tab="kicks">Kicks <span id="kicksCount" class="tab-count">0</span></button>
             </div>
             
             <!-- Alerts -->
@@ -258,123 +302,12 @@
               </div>
               <div id="flaggedList" class="table-box">
                 <table>
-                  <thead><tr><th>Type</th><th>Address</th><th>Count</th><th>Action</th></tr></thead>
+                  <thead><tr><th>Type</th><th>Address</th><th>Count</th></tr></thead>
                   <tbody id="flaggedTableBody">
-                    <tr><td colspan="4" class="text-center opacity-50 py-4">No flagged addresses</td></tr>
+                    <tr><td colspan="3" class="text-center opacity-50 py-4">No flagged addresses</td></tr>
                   </tbody>
                 </table>
               </div>
-            </div>
-            
-            <!-- Kicks -->
-            <div id="tab-kicks" class="tab-content card hidden">
-              <div class="flex justify-between mb-3">
-                <span class="text-sm opacity-50">Counter-attack logs</span>
-                <button id="clearKicks" class="text-xs text-yellow-500 hover:underline">Clear</button>
-              </div>
-              <div id="kicksList" class="alert-box">
-                <div class="empty-state"><i class="fas fa-bolt"></i><p>No kicks yet</p></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== SCANNER ==================== -->
-      <section id="page-scanner" class="page-section p-6">
-        <!-- Header -->
-        <div class="flex items-center justify-between mb-6">
-          <div>
-            <h1 class="text-2xl font-bold flex items-center">
-              <i class="fas fa-wifi mr-3 text-primary"></i>Scanner
-            </h1>
-            <p class="text-sm opacity-50">Discover devices on network</p>
-          </div>
-          <div class="flex items-center gap-4">
-            <div class="flex items-center">
-              <span id="scannerStatus" class="status-dot status-inactive"></span>
-              <span id="scannerStatusText" class="text-sm">Ready</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Stats -->
-        <div class="grid grid-cols-4 gap-4 mb-6">
-          <div class="stat-box">
-            <span class="stat-value" id="scanDevices">0</span>
-            <span class="stat-label">Devices</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-value" id="scanOnline">0</span>
-            <span class="stat-label">Online</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-value" id="scanSubnet">-</span>
-            <span class="stat-label">Subnet</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-value" id="scanTime">-</span>
-            <span class="stat-label">Last Scan</span>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-4 gap-6">
-          <!-- Controls -->
-          <div class="card">
-            <h3 class="card-title"><i class="fas fa-cog"></i>Configuration</h3>
-            
-            <label class="label">Interface</label>
-            <select id="scannerInterface" class="input-select"></select>
-            
-            <label class="label mt-3">Scan Mode</label>
-            <select id="scanMode" class="input-select">
-              <option value="arp">ARP Scan (Fast)</option>
-              <option value="full">Full Scan</option>
-            </select>
-            
-            <label class="label mt-3">Custom Range</label>
-            <input type="text" id="scanRange" class="input-text" placeholder="e.g. 192.168.1.0/24">
-            <span class="text-xs opacity-50">Leave empty for auto-detect</span>
-            
-            <label class="label mt-3">Timeout (sec)</label>
-            <input type="number" id="scanTimeout" class="input-text" value="3" min="1" max="10">
-            
-            <button id="scanBtn" class="btn-action btn-primary mt-4">
-              <i class="fas fa-search"></i>SCAN NETWORK
-            </button>
-            
-            <div class="mt-3">
-              <label class="checkbox-label">
-                <input type="checkbox" id="autoRefresh">
-                <span>Auto refresh (30s)</span>
-              </label>
-            </div>
-          </div>
-          
-          <!-- Device List -->
-          <div class="col-span-3 card">
-            <div class="flex justify-between items-center mb-3">
-              <h3 class="card-title mb-0"><i class="fas fa-laptop"></i>Discovered Devices</h3>
-              <div class="flex gap-2">
-                <input type="text" id="deviceSearch" class="input-text text-sm" placeholder="Search..." style="width: 150px">
-                <button id="exportDevices" class="btn-sm bg-gray-600"><i class="fas fa-download"></i></button>
-              </div>
-            </div>
-            <div id="deviceList" class="table-box" style="max-height: 400px; overflow-y: auto;">
-              <table>
-                <thead>
-                  <tr>
-                    <th>IP Address</th>
-                    <th>MAC Address</th>
-                    <th>Vendor</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody id="deviceTableBody">
-                  <tr><td colspan="5" class="text-center opacity-50 py-8">Click "Scan Network" to discover devices</td></tr>
-                </tbody>
-              </table>
             </div>
           </div>
         </div>
@@ -390,7 +323,7 @@
             <p class="text-xs opacity-30 mt-2">v2.0.0</p>
           </div>
           
-          <div class="grid grid-cols-3 gap-4 mb-8">
+          <div class="grid grid-cols-2 gap-4 mb-8">
             <div class="card text-center">
               <i class="fas fa-crosshairs text-2xl text-red-500 mb-2"></i>
               <h3 class="font-bold">Attacker</h3>
@@ -400,11 +333,6 @@
               <i class="fas fa-shield-alt text-2xl text-blue-500 mb-2"></i>
               <h3 class="font-bold">Defender</h3>
               <p class="text-xs opacity-50">Real-time detection & counter-attack</p>
-            </div>
-            <div class="card text-center">
-              <i class="fas fa-wifi text-2xl text-green-500 mb-2"></i>
-              <h3 class="font-bold">Scanner</h3>
-              <p class="text-xs opacity-50">Network device discovery</p>
             </div>
           </div>
           

@@ -23,12 +23,13 @@ echo  ========================================
 echo    DeadNet - Network Security Tool
 echo  ========================================
 echo.
-echo    [1] WebView Mode (Show Terminal)
-echo    [2] WebView Mode (Hide Terminal)
-echo    [3] Browser Mode
+echo    [1] Run (WebView)
+echo    [2] Run (WebView, Hide Terminal)
+echo    [3] Run (Browser)
 echo    [4] Build Executable
 echo    [5] Install Dependencies
-echo    [6] Exit
+echo    [6] Clean Build Files
+echo    [7] Exit
 echo.
 set /p choice="  Select: "
 
@@ -37,7 +38,8 @@ if "%choice%"=="2" goto webview_hide
 if "%choice%"=="3" goto browser
 if "%choice%"=="4" goto build
 if "%choice%"=="5" goto install
-if "%choice%"=="6" exit /b
+if "%choice%"=="6" goto clean
+if "%choice%"=="7" exit /b
 goto menu
 
 :check_venv
@@ -152,10 +154,6 @@ echo.
     --hidden-import "flask_cors" ^
     --hidden-import "webview" ^
     --hidden-import "webview.platforms.winforms" ^
-    --hidden-import "pystray" ^
-    --hidden-import "pystray._win32" ^
-    --hidden-import "PIL.Image" ^
-    --hidden-import "PIL.ImageDraw" ^
     --exclude-module "tkinter" ^
     --exclude-module "scapy.contrib" ^
     --exclude-module "scapy.tools" ^
@@ -168,16 +166,31 @@ echo.
     --uac-admin ^
     main.py
 
-:: Cleanup
+:: Cleanup build artifacts
 if exist "build" rmdir /s /q build >nul 2>&1
 if exist "DeadNet.spec" del DeadNet.spec >nul 2>&1
 
 echo.
 if exist "dist\DeadNet.exe" (
     echo  [+] Success: dist\DeadNet.exe
+    echo  [*] Size: 
+    for %%A in (dist\DeadNet.exe) do echo     %%~zA bytes
 ) else (
     echo  [!] Build failed
 )
 echo.
+pause
+goto menu
+
+:clean
+echo.
+echo  [+] Cleaning build files...
+if exist "build" rmdir /s /q build
+if exist "DeadNet.spec" del DeadNet.spec
+if exist "dist\DeadNet.exe" del dist\DeadNet.exe
+if exist "__pycache__" rmdir /s /q __pycache__
+if exist "backend\__pycache__" rmdir /s /q backend\__pycache__
+if exist "deadnet.log" del deadnet.log
+echo  [+] Done!
 pause
 goto menu

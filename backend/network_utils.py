@@ -10,43 +10,65 @@ from .misc_utils import os_is_windows
 
 
 def get_wifi_info():
-    """Get WiFi connection info (Windows)"""
+    """Get WiFi connection info (cross-platform)"""
     wifi_info = {}
-    if not os_is_windows():
-        return wifi_info
     
-    try:
-        result = subprocess.run(['netsh', 'wlan', 'show', 'interfaces'], 
-                              capture_output=True, text=True, timeout=5)
-        output = result.stdout
-        
-        for line in output.split('\n'):
-            line = line.strip()
-            if ':' in line:
-                key, _, value = line.partition(':')
-                key = key.strip().lower()
-                value = value.strip()
-                
-                if 'ssid' in key and 'bssid' not in key:
-                    wifi_info['ssid'] = value
-                elif 'bssid' in key:
-                    wifi_info['bssid'] = value
-                elif 'radio type' in key or 'tipo de rádio' in key:
-                    wifi_info['radio_type'] = value  # e.g., 802.11ax, 802.11ac
-                elif 'band' in key or 'banda' in key:
-                    wifi_info['band'] = value  # e.g., 2.4 GHz, 5 GHz
-                elif 'channel' in key or 'canal' in key:
-                    wifi_info['channel'] = value
-                elif 'receive rate' in key or 'taxa de recepção' in key:
-                    wifi_info['rx_rate'] = value
-                elif 'transmit rate' in key or 'taxa de transmissão' in key:
-                    wifi_info['tx_rate'] = value
-                elif 'signal' in key or 'sinal' in key:
-                    wifi_info['signal'] = value
-                elif 'authentication' in key or 'autenticação' in key:
-                    wifi_info['auth'] = value
-    except:
-        pass
+    if os_is_windows():
+        # Windows: use netsh
+        try:
+            result = subprocess.run(['netsh', 'wlan', 'show', 'interfaces'], 
+                                  capture_output=True, text=True, timeout=5)
+            output = result.stdout
+            
+            for line in output.split('\n'):
+                line = line.strip()
+                if ':' in line:
+                    key, _, value = line.partition(':')
+                    key = key.strip().lower()
+                    value = value.strip()
+                    
+                    if 'ssid' in key and 'bssid' not in key:
+                        wifi_info['ssid'] = value
+                    elif 'bssid' in key:
+                        wifi_info['bssid'] = value
+                    elif 'radio type' in key or 'tipo de rádio' in key:
+                        wifi_info['radio_type'] = value
+                    elif 'band' in key or 'banda' in key:
+                        wifi_info['band'] = value
+                    elif 'channel' in key or 'canal' in key:
+                        wifi_info['channel'] = value
+                    elif 'receive rate' in key or 'taxa de recepção' in key:
+                        wifi_info['rx_rate'] = value
+                    elif 'transmit rate' in key or 'taxa de transmissão' in key:
+                        wifi_info['tx_rate'] = value
+                    elif 'signal' in key or 'sinal' in key:
+                        wifi_info['signal'] = value
+                    elif 'authentication' in key or 'autenticação' in key:
+                        wifi_info['auth'] = value
+        except:
+            pass
+    else:
+        # Linux: try iwconfig or nmcli
+        try:
+            result = subprocess.run(['iwconfig'], capture_output=True, text=True, timeout=5)
+            output = result.stdout
+            
+            for line in output.split('\n'):
+                if 'ESSID:' in line:
+                    ssid = line.split('ESSID:')[1].strip().strip('"')
+                    if ssid and ssid != 'off/any':
+                        wifi_info['ssid'] = ssid
+                elif 'Frequency:' in line:
+                    freq = line.split('Frequency:')[1].split()[0]
+                    wifi_info['band'] = freq
+                elif 'Bit Rate=' in line:
+                    rate = line.split('Bit Rate=')[1].split()[0]
+                    wifi_info['rx_rate'] = rate
+                elif 'Signal level=' in line:
+                    signal = line.split('Signal level=')[1].split()[0]
+                    wifi_info['signal'] = signal
+        except:
+            pass
     
     return wifi_info
 

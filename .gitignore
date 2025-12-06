@@ -8,6 +8,7 @@ __pycache__/
 # Build outputs
 dist/
 build/
+*.spec
 
 # IDE
 .vscode/
@@ -15,6 +16,7 @@ build/
 
 # Logs
 *.log
+deadnet.log
 
 # Database
 defender_data.json
