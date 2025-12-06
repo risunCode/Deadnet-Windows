@@ -4,14 +4,32 @@ DeadNet - Network Utilities
 
 import subprocess
 import ipaddress
-import netifaces
-from scapy.all import *
-from .misc_utils import os_is_windows
+import sys
+
+# Check if running on Android
+IS_ANDROID = hasattr(sys, 'getandroidapilevel') or 'android' in sys.platform.lower()
+
+try:
+    import netifaces
+except ImportError:
+    netifaces = None
+
+try:
+    from scapy.all import conf, getmacbyip
+except ImportError:
+    conf = None
+    getmacbyip = lambda x: None
+
+from .misc_utils import os_is_windows, os_is_linux
 
 
 def get_wifi_info():
     """Get WiFi connection info (cross-platform)"""
     wifi_info = {}
+    
+    # Android - skip wifi info (not easily accessible)
+    if IS_ANDROID:
+        return wifi_info
     
     if os_is_windows():
         # Windows: use netsh
@@ -75,6 +93,9 @@ def get_wifi_info():
 
 def get_network_interfaces():
     """Get all available network interfaces"""
+    if not netifaces:
+        return []
+    
     try:
         interfaces = netifaces.interfaces()
         interface_details = []
@@ -127,6 +148,9 @@ def get_network_interfaces():
 
 def get_gateway_ipv4(iface):
     """Get gateway IPv4 address for interface"""
+    if not netifaces:
+        return None
+    
     # Method 1: Try netifaces
     try:
         gateways = netifaces.gateways()

@@ -2,7 +2,16 @@
 Packet Detection Engine for DeadNet Defender
 """
 
-from scapy.all import *
+try:
+    from scapy.all import ARP, IPv6, ICMPv6ND_RA, ICMPv6NDOptPrefixInfo, Ether, get_if_hwaddr
+except ImportError:
+    ARP = None
+    IPv6 = None
+    ICMPv6ND_RA = None
+    ICMPv6NDOptPrefixInfo = None
+    Ether = None
+    get_if_hwaddr = lambda x: None
+
 from collections import defaultdict
 import time
 

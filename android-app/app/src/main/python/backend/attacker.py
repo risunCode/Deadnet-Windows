@@ -6,7 +6,18 @@ import time
 import traceback
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from scapy.all import *
+
+try:
+    from scapy.all import *
+except ImportError:
+    # Scapy not available - define stubs
+    ARP = None
+    Ether = None
+    IPv6 = None
+    RandMAC = lambda: "00:00:00:00:00:00"
+    sendp = lambda *args, **kwargs: None
+    getmacbyip = lambda x: None
+    conf = type('conf', (), {'iface': None})()
 
 from .defines import *
 from .misc_utils import *
