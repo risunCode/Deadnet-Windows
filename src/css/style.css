@@ -186,3 +186,120 @@ body {
 ::-webkit-scrollbar { @apply w-1.5; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { @apply bg-gray-700 rounded; }
+
+
+/* ===== MOBILE RESPONSIVE ===== */
+@media (max-width: 768px) {
+  /* Hide sidebar, show as top bar */
+  .flex.h-screen {
+    @apply flex-col;
+  }
+  
+  aside {
+    @apply w-full h-auto flex-row flex-wrap border-r-0 border-b;
+    width: 100% !important;
+  }
+  
+  aside > div:first-child {
+    @apply w-full;
+  }
+  
+  aside nav {
+    @apply flex flex-row flex-wrap justify-center p-1;
+  }
+  
+  aside nav .nav-btn {
+    @apply w-auto px-3 py-2 border-l-0;
+  }
+  
+  aside nav .nav-btn.active {
+    border-left: none;
+    border-bottom: 2px solid var(--primary);
+  }
+  
+  /* Hide theme selector and panic on mobile top bar */
+  aside > div:nth-child(3),
+  aside > div:nth-child(4),
+  aside > div:last-child {
+    @apply hidden;
+  }
+  
+  /* Main content */
+  main {
+    @apply p-2;
+  }
+  
+  .page-section {
+    @apply p-2;
+  }
+  
+  /* Stats grid - 2 columns on mobile */
+  .grid-cols-4 {
+    @apply grid-cols-2;
+  }
+  
+  .stat-box {
+    @apply p-2;
+  }
+  
+  .stat-value {
+    @apply text-lg;
+  }
+  
+  /* Config grid - single column */
+  .grid-cols-3 {
+    @apply grid-cols-1;
+  }
+  
+  .col-span-2 {
+    grid-column: span 1;
+  }
+  
+  /* Cards */
+  .card {
+    @apply p-3;
+  }
+  
+  /* Logs */
+  .log-box {
+    @apply h-48;
+  }
+  
+  /* Tabs */
+  .tab-btn, .atk-tab-btn {
+    @apply px-2 py-1 text-xs;
+  }
+  
+  .tab-content, .atk-tab-content {
+    @apply min-h-[200px];
+  }
+  
+  /* Header */
+  h1 {
+    @apply text-lg;
+  }
+  
+  /* Alert box */
+  .alert-box {
+    @apply max-h-48;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+  .stat-value {
+    @apply text-base;
+  }
+  
+  .stat-label {
+    font-size: 0.65rem;
+  }
+  
+  .btn-action {
+    @apply py-2 text-xs;
+  }
+  
+  .log-box {
+    @apply h-40 text-[10px];
+  }
+}
