@@ -15,6 +15,27 @@ from datetime import datetime
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
+# Determine if running as frozen exe
+IS_FROZEN = getattr(sys, 'frozen', False)
+
+if IS_FROZEN:
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Setup logging to file for frozen exe (no console)
+LOG_FILE = os.path.join(BASE_DIR, 'deadnet.log')
+if IS_FROZEN:
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[logging.FileHandler(LOG_FILE, mode='w')]
+    )
+else:
+    logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger('DeadNet')
+
 # System tray support
 try:
     import pystray
@@ -25,22 +46,27 @@ except ImportError:
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
-import netifaces
-from scapy.all import *
-
-from backend.defines import *
-from backend.misc_utils import is_admin, os_is_windows
-from backend.network_utils import get_network_interfaces
-from backend.attacker import DeadNetAttacker
-from backend.detector import PacketDetector
-from backend.database import DefenderDatabase
+try:
+    import netifaces
+    from scapy.all import *
+    from backend.defines import *
+    from backend.misc_utils import is_admin, os_is_windows
+    from backend.network_utils import get_network_interfaces
+    from backend.attacker import DeadNetAttacker
+    from backend.detector import PacketDetector
+    from backend.database import DefenderDatabase
+except Exception as e:
+    logger.error(f"Import error: {e}")
+    if IS_FROZEN:
+        # Show error dialog for frozen exe
+        try:
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(0, f"Failed to load modules:\n{e}", "DeadNet Error", 0x10)
+        except:
+            pass
+    sys.exit(1)
 
 conf.verb = 0
-
-if getattr(sys, 'frozen', False):
-    BASE_DIR = os.path.dirname(sys.executable)
-else:
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DIST_DIR = os.path.join(BASE_DIR, 'dist')
 
@@ -627,51 +653,66 @@ def run_webview_mode(port):
     webview_window = webview.create_window('DeadNet', f'http://127.0.0.1:{port}', width=1100, height=700, resizable=True, min_size=(900, 600))
     webview.start()
 
+def show_error(message):
+    """Show error message - dialog for frozen, print for console"""
+    logger.error(message)
+    if IS_FROZEN:
+        try:
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(0, message, "DeadNet Error", 0x10)
+        except:
+            pass
+    else:
+        print(f"{RED}[!]{WHITE} {message}")
+
 def main():
-    parser = argparse.ArgumentParser(description='DeadNet - Network Security Tool')
-    parser.add_argument('--browser', '-b', action='store_true', help='Browser mode')
-    parser.add_argument('--webview', '-w', action='store_true', help='WebView mode')
-    parser.add_argument('--port', '-p', type=int, default=5000, help='Port (default: 5000)')
-    parser.add_argument('--no-open', action='store_true', help='Don\'t auto-open browser')
-    args = parser.parse_args()
-    
-    print(f"\n{BANNER}")
-    print("DeadNet - Network Security Testing & Defense Tool")
-    print("=" * 60)
-    
-    if not is_admin():
-        print(f"{RED}[!]{WHITE} Administrator privileges required!")
-        print(f"{YELLOW}[!]{WHITE} Run as {'administrator' if os_is_windows() else 'sudo'}")
-        if sys.stdin and sys.stdin.isatty():
-            input("Press Enter to exit...")
-        sys.exit(1)
-    
-    logging.getLogger('werkzeug').setLevel(logging.ERROR)
-    sys.modules['flask.cli'].show_server_banner = lambda *x: None
-    
-    if args.browser and args.webview:
-        print(f"{RED}[!]{WHITE} Cannot use both --browser and --webview")
-        sys.exit(1)
-    
-    # Check dist folder exists
-    if not os.path.exists(os.path.join(DIST_DIR, 'index.html')):
-        print(f"{RED}[!]{WHITE} Web assets not found in: {DIST_DIR}")
-        print(f"{YELLOW}[!]{WHITE} Run 'npm run build' first or use launcher.cmd")
-        if sys.stdin and sys.stdin.isatty():
-            input("Press Enter to exit...")
-        sys.exit(1)
-    
-    mode = 'browser' if args.browser else ('webview' if args.webview else ('webview' if os_is_windows() else 'browser'))
-    print(f"{BLUE}[*]{WHITE} Mode: {mode.upper()} | Port: {args.port}")
-    print("=" * 60 + "\n")
-    
     try:
+        parser = argparse.ArgumentParser(description='DeadNet - Network Security Tool')
+        parser.add_argument('--browser', '-b', action='store_true', help='Browser mode')
+        parser.add_argument('--webview', '-w', action='store_true', help='WebView mode')
+        parser.add_argument('--port', '-p', type=int, default=5000, help='Port (default: 5000)')
+        parser.add_argument('--no-open', action='store_true', help='Don\'t auto-open browser')
+        args = parser.parse_args()
+        
+        logger.info("DeadNet starting...")
+        
+        if not IS_FROZEN:
+            print(f"\n{BANNER}")
+            print("DeadNet - Network Security Testing & Defense Tool")
+            print("=" * 60)
+        
+        if not is_admin():
+            show_error("Administrator privileges required!\nPlease run as administrator.")
+            sys.exit(1)
+        
+        logging.getLogger('werkzeug').setLevel(logging.ERROR)
+        sys.modules['flask.cli'].show_server_banner = lambda *x: None
+        
+        if args.browser and args.webview:
+            show_error("Cannot use both --browser and --webview")
+            sys.exit(1)
+        
+        # Check dist folder exists
+        if not os.path.exists(os.path.join(DIST_DIR, 'index.html')):
+            show_error(f"Web assets not found in: {DIST_DIR}\nRun 'npm run build' first.")
+            sys.exit(1)
+        
+        mode = 'browser' if args.browser else ('webview' if args.webview else ('webview' if os_is_windows() else 'browser'))
+        logger.info(f"Mode: {mode.upper()} | Port: {args.port}")
+        
+        if not IS_FROZEN:
+            print(f"{BLUE}[*]{WHITE} Mode: {mode.upper()} | Port: {args.port}")
+            print("=" * 60 + "\n")
+        
         if mode == 'webview':
             run_webview_mode(args.port)
         else:
             run_browser_mode(args.port, args.no_open)
-    except KeyboardInterrupt:
-        print(f"\n{RED}[-]{WHITE} Shutting down...")
+            
+    except Exception as e:
+        logger.exception("Fatal error")
+        show_error(f"Fatal error: {e}")
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
