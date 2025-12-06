@@ -115,12 +115,12 @@ pkg update && pkg install -y python git wget clang libffi openssl && wget -qO- h
 
 **Run DeadNet:**
 ```bash
-su -c "sh ~/deadnet/run.sh"
+su -c "/data/data/com.termux/files/usr/bin/python /data/data/com.termux/files/home/deadnet/main.py --browser"
 ```
 
 **Update DeadNet:**
 ```bash
-cd ~/deadnet && git pull && chmod +x run.sh
+cd ~/deadnet && git pull
 ```
 Then open browser: `http://127.0.0.1:5000`
 
@@ -144,8 +144,7 @@ git clone https://github.com/risunCode/Deadnet-Windows.git ~/deadnet
 
 **Step 4: Run**
 ```bash
-su
-cd /data/data/com.termux/files/home/deadnet && /data/data/com.termux/files/usr/bin/python main.py --browser
+su -c "/data/data/com.termux/files/usr/bin/python /data/data/com.termux/files/home/deadnet/main.py --browser"
 ```
 
 </details>

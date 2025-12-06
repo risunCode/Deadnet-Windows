@@ -61,17 +61,10 @@ echo "  Installation Complete!"
 echo "==========================================${NC}"
 echo ""
 echo -e "  Run DeadNet:"
-echo -e "  ${YELLOW}su -c \"sh ~/deadnet/run.sh\"${NC}"
-echo ""
-echo -e "  Or manually:"
-echo -e "  ${YELLOW}su${NC}"
-echo -e "  ${YELLOW}sh /data/data/com.termux/files/home/deadnet/run.sh${NC}"
+echo -e "  ${YELLOW}su -c \"/data/data/com.termux/files/usr/bin/python /data/data/com.termux/files/home/deadnet/main.py --browser\"${NC}"
 echo ""
 echo -e "  Then open: ${BLUE}http://127.0.0.1:5000${NC}"
 echo ""
-
-# Make run.sh executable
-chmod +x "$INSTALL_DIR/run.sh"
 
 read -p "Start now? (y/n): " start
 if [ "$start" = "y" ]; then
@@ -79,5 +72,5 @@ if [ "$start" = "y" ]; then
     echo -e "${BLUE}[*] Starting...${NC}"
     echo "    Open browser: http://127.0.0.1:5000"
     echo ""
-    su -c "sh /data/data/com.termux/files/home/deadnet/run.sh"
+    su -c "/data/data/com.termux/files/usr/bin/python /data/data/com.termux/files/home/deadnet/main.py --browser"
 fi
