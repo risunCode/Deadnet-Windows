@@ -60,21 +60,18 @@ echo -e "${GREEN}=========================================="
 echo "  Installation Complete!"
 echo "==========================================${NC}"
 echo ""
-PYTHON_PATH=$(which python)
 echo -e "  Run DeadNet:"
-echo -e "  ${YELLOW}cd ~/deadnet && su -c \"$PYTHON_PATH main.py --browser\"${NC}"
+echo -e "  ${YELLOW}su${NC}"
+echo -e "  ${YELLOW}cd /data/data/com.termux/files/home/deadnet && /data/data/com.termux/files/usr/bin/python main.py --browser${NC}"
 echo ""
 echo -e "  Then open: ${BLUE}http://127.0.0.1:5000${NC}"
 echo ""
 
-PYTHON_PATH=$(which python)
-
 read -p "Start now? (y/n): " start
 if [ "$start" = "y" ]; then
-    cd "$INSTALL_DIR"
     echo ""
     echo -e "${BLUE}[*] Starting...${NC}"
     echo "    Open browser: http://127.0.0.1:5000"
     echo ""
-    su -c "cd $INSTALL_DIR && $PYTHON_PATH main.py --browser"
+    su -c "cd /data/data/com.termux/files/home/deadnet && /data/data/com.termux/files/usr/bin/python main.py --browser"
 fi
