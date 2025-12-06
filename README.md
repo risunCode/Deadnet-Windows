@@ -127,7 +127,7 @@ bash install-android.sh
 
 **Run DeadNet (after install):**
 ```bash
-cd ~/deadnet && tsu -c "python main.py --browser"
+cd ~/deadnet && su -c "python main.py --browser"
 ```
 
 Then open browser: `http://127.0.0.1:5000`
