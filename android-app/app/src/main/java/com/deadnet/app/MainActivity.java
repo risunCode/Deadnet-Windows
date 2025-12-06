@@ -2,6 +2,7 @@ package com.deadnet.app;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -9,6 +10,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.*;
+import androidx.core.content.ContextCompat;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -251,27 +253,35 @@ public class MainActivity extends Activity {
     }
     
     private void updateAttackUI() {
+        Drawable icon;
         if (attackActive) {
-            btnAttack.setText("■ STOP ATTACK");
+            btnAttack.setText("STOP ATTACK");
             btnAttack.setBackgroundColor(0xFF16A34A);
+            icon = ContextCompat.getDrawable(this, R.drawable.ic_stop);
             statusDot.setBackgroundResource(R.drawable.status_dot_active);
             statusText.setText("Attacking");
         } else {
-            btnAttack.setText("▶ START ATTACK");
+            btnAttack.setText("START ATTACK");
             btnAttack.setBackgroundColor(0xFFDC2626);
+            icon = ContextCompat.getDrawable(this, R.drawable.ic_play);
             statusDot.setBackgroundResource(R.drawable.status_dot_inactive);
             statusText.setText("Inactive");
         }
+        btnAttack.setCompoundDrawablesWithIntrinsicBounds(icon, null, null, null);
     }
     
     private void updateDefendUI() {
+        Drawable icon;
         if (defendActive) {
-            btnDefend.setText("■ STOP MONITORING");
+            btnDefend.setText("STOP MONITORING");
             btnDefend.setBackgroundColor(0xFFDC2626);
+            icon = ContextCompat.getDrawable(this, R.drawable.ic_stop);
         } else {
-            btnDefend.setText("▶ START MONITORING");
+            btnDefend.setText("START MONITORING");
             btnDefend.setBackgroundColor(0xFF16A34A);
+            icon = ContextCompat.getDrawable(this, R.drawable.ic_play);
         }
+        btnDefend.setCompoundDrawablesWithIntrinsicBounds(icon, null, null, null);
     }
     
     private void startPolling() {

@@ -26,6 +26,11 @@
                 android:background="#111111"
                 android:padding="12dp"
                 android:layout_marginEnd="4dp">
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_packet_blue"
+                    android:layout_marginBottom="4dp" />
                 <TextView
                     android:id="@+id/defStatPackets"
                     android:layout_width="wrap_content"
@@ -51,6 +56,11 @@
                 android:background="#111111"
                 android:padding="12dp"
                 android:layout_marginStart="4dp">
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_alert"
+                    android:layout_marginBottom="4dp" />
                 <TextView
                     android:id="@+id/defStatSuspicious"
                     android:layout_width="wrap_content"
@@ -69,13 +79,24 @@
         </LinearLayout>
 
         <!-- Interface Selector -->
-        <TextView
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Interface"
-            android:textColor="#888888"
-            android:textSize="12sp"
-            android:layout_marginBottom="4dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="4dp">
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_network"
+                android:layout_marginEnd="6dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Interface"
+                android:textColor="#888888"
+                android:textSize="12sp" />
+        </LinearLayout>
 
         <Spinner
             android:id="@+id/defSpinnerInterface"
@@ -90,21 +111,34 @@
             android:id="@+id/btnDefend"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="▶ START MONITORING"
+            android:text="START MONITORING"
             android:textColor="#ffffff"
             android:textSize="16sp"
             android:textStyle="bold"
+            android:drawableStart="@drawable/ic_play"
+            android:drawablePadding="8dp"
             android:background="#16a34a"
             android:layout_marginBottom="12dp" />
 
         <!-- Alerts -->
-        <TextView
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🚨 Alerts"
-            android:textColor="#ef4444"
-            android:textSize="14sp"
-            android:layout_marginBottom="8dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_alert"
+                android:layout_marginEnd="6dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Alerts"
+                android:textColor="#ef4444"
+                android:textSize="14sp" />
+        </LinearLayout>
 
         <ScrollView
             android:layout_width="match_parent"

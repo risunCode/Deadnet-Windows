@@ -15,8 +15,6 @@ android {
         versionName "2.0.0"
         
         python {
-            buildPython "/usr/bin/python3"
-            
             pip {
                 install "scapy"
                 install "netifaces"

@@ -37,11 +37,31 @@ def get_interfaces():
         import netifaces
         result = []
         for iface in netifaces.interfaces():
+            # Skip loopback and dummy interfaces
+            if iface == 'lo' or iface.startswith('dummy'):
+                continue
+            
             addrs = netifaces.ifaddresses(iface)
             if netifaces.AF_INET in addrs:
                 ip = addrs[netifaces.AF_INET][0].get('addr')
-                if ip and ip != '127.0.0.1' and not ip.startswith('169.254'):
-                    result.append({'name': iface, 'ip': ip})
+                if ip and ip != '127.0.0.1':
+                    # Determine interface type
+                    iface_type = 'unknown'
+                    if 'wlan' in iface.lower():
+                        iface_type = 'wifi'
+                    elif 'rmnet' in iface.lower() or 'ccmni' in iface.lower():
+                        iface_type = 'mobile'
+                    elif 'eth' in iface.lower():
+                        iface_type = 'ethernet'
+                    
+                    result.append({
+                        'name': iface, 
+                        'ip': ip,
+                        'type': iface_type
+                    })
+        
+        # Sort: wifi first, then mobile, then others
+        result.sort(key=lambda x: (0 if x['type'] == 'wifi' else 1 if x['type'] == 'mobile' else 2))
         return result
     except Exception as e:
         logger.error(f"Interface error: {e}")

@@ -26,6 +26,11 @@
                 android:background="#111111"
                 android:padding="12dp"
                 android:layout_marginEnd="4dp">
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_cycle"
+                    android:layout_marginBottom="4dp" />
                 <TextView
                     android:id="@+id/statCycles"
                     android:layout_width="wrap_content"
@@ -52,6 +57,11 @@
                 android:padding="12dp"
                 android:layout_marginStart="4dp"
                 android:layout_marginEnd="4dp">
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_packet"
+                    android:layout_marginBottom="4dp" />
                 <TextView
                     android:id="@+id/statPackets"
                     android:layout_width="wrap_content"
@@ -77,6 +87,11 @@
                 android:background="#111111"
                 android:padding="12dp"
                 android:layout_marginStart="4dp">
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_timer"
+                    android:layout_marginBottom="4dp" />
                 <TextView
                     android:id="@+id/statDuration"
                     android:layout_width="wrap_content"
@@ -95,13 +110,24 @@
         </LinearLayout>
 
         <!-- Interface Selector -->
-        <TextView
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Interface"
-            android:textColor="#888888"
-            android:textSize="12sp"
-            android:layout_marginBottom="4dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="4dp">
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_network"
+                android:layout_marginEnd="6dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Interface"
+                android:textColor="#888888"
+                android:textSize="12sp" />
+        </LinearLayout>
 
         <Spinner
             android:id="@+id/spinnerInterface"
@@ -112,13 +138,24 @@
             android:layout_marginBottom="12dp" />
 
         <!-- Intensity -->
-        <TextView
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Intensity"
-            android:textColor="#888888"
-            android:textSize="12sp"
-            android:layout_marginBottom="4dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="4dp">
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_intensity"
+                android:layout_marginEnd="6dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Intensity"
+                android:textColor="#888888"
+                android:textSize="12sp" />
+        </LinearLayout>
 
         <Spinner
             android:id="@+id/spinnerIntensity"
@@ -129,62 +166,121 @@
             android:layout_marginBottom="12dp" />
 
         <!-- Attack Types -->
-        <TextView
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Attack Types"
-            android:textColor="#888888"
-            android:textSize="12sp"
-            android:layout_marginBottom="8dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_attack"
+                android:layout_marginEnd="6dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Attack Types"
+                android:textColor="#888888"
+                android:textSize="12sp" />
+        </LinearLayout>
 
-        <CheckBox
-            android:id="@+id/checkArp"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="ARP Poisoning"
-            android:textColor="#e5e5e5"
-            android:checked="true"
-            android:buttonTint="#00ff00" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="4dp">
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_arp"
+                android:layout_marginEnd="8dp" />
+            <CheckBox
+                android:id="@+id/checkArp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ARP Poisoning"
+                android:textColor="#e5e5e5"
+                android:checked="true"
+                android:buttonTint="#00ff00" />
+        </LinearLayout>
 
-        <CheckBox
-            android:id="@+id/checkIpv6"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="IPv6 RA Spoof"
-            android:textColor="#e5e5e5"
-            android:checked="true"
-            android:buttonTint="#00ff00" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="4dp">
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_ipv6"
+                android:layout_marginEnd="8dp" />
+            <CheckBox
+                android:id="@+id/checkIpv6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="IPv6 RA Spoof"
+                android:textColor="#e5e5e5"
+                android:checked="true"
+                android:buttonTint="#00ff00" />
+        </LinearLayout>
 
-        <CheckBox
-            android:id="@+id/checkDeadRouter"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Dead Router"
-            android:textColor="#e5e5e5"
-            android:checked="true"
-            android:buttonTint="#00ff00"
-            android:layout_marginBottom="16dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_router"
+                android:layout_marginEnd="8dp" />
+            <CheckBox
+                android:id="@+id/checkDeadRouter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Dead Router"
+                android:textColor="#e5e5e5"
+                android:checked="true"
+                android:buttonTint="#00ff00" />
+        </LinearLayout>
 
         <!-- Start/Stop Button -->
         <Button
             android:id="@+id/btnAttack"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="▶ START ATTACK"
+            android:text="START ATTACK"
             android:textColor="#ffffff"
             android:textSize="16sp"
             android:textStyle="bold"
+            android:drawableStart="@drawable/ic_play"
+            android:drawablePadding="8dp"
             android:background="#dc2626"
             android:layout_marginBottom="12dp" />
 
         <!-- Logs -->
-        <TextView
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="📋 Logs"
-            android:textColor="#00ff00"
-            android:textSize="14sp"
-            android:layout_marginBottom="8dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_log"
+                android:layout_marginEnd="6dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Logs"
+                android:textColor="#00ff00"
+                android:textSize="14sp" />
+        </LinearLayout>
 
         <ScrollView
             android:layout_width="match_parent"
