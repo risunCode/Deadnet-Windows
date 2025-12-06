@@ -14,7 +14,6 @@ import androidx.core.content.ContextCompat;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import com.chaquo.python.PyObject;
 import com.chaquo.python.Python;
@@ -151,9 +150,9 @@ public class MainActivity extends Activity {
                 interfaces.clear();
                 List<String> names = new ArrayList<>();
                 for (PyObject iface : ifaces) {
-                    Map<PyObject, PyObject> map = iface.asMap();
-                    String name = map.get(py.builtins().callAttr("str", "name")).toString();
-                    String ip = map.get(py.builtins().callAttr("str", "ip")).toString();
+                    // Use get() with string key directly
+                    String name = iface.get("name").toString();
+                    String ip = iface.get("ip").toString();
                     interfaces.add(name);
                     names.add(name + " (" + ip + ")");
                 }
@@ -298,13 +297,13 @@ public class MainActivity extends Activity {
         new Thread(() -> {
             try {
                 PyObject status = backend.callAttr("get_status");
-                Map<PyObject, PyObject> map = status.asMap();
                 
-                int cycles = map.get(py.builtins().callAttr("str", "cycles")).toInt();
-                int packets = map.get(py.builtins().callAttr("str", "packets")).toInt();
-                int duration = map.get(py.builtins().callAttr("str", "duration")).toInt();
-                String logs = map.get(py.builtins().callAttr("str", "logs")).toString();
-                boolean active = map.get(py.builtins().callAttr("str", "active")).toBoolean();
+                // Use get() with string key directly
+                int cycles = status.get("cycles").toInt();
+                int packets = status.get("packets").toInt();
+                int duration = status.get("duration").toInt();
+                String logs = status.get("logs").toString();
+                boolean active = status.get("active").toBoolean();
                 
                 runOnUiThread(() -> {
                     statCycles.setText(String.valueOf(cycles));
