@@ -70,14 +70,7 @@ echo ""
 echo -e "  Then open: ${BLUE}http://127.0.0.1:5000${NC}"
 echo ""
 
-# Create run script
-cat > "$INSTALL_DIR/run.sh" << 'RUNSCRIPT'
-#!/system/bin/sh
-cd /data/data/com.termux/files/home/deadnet
-export LD_LIBRARY_PATH=/data/data/com.termux/files/usr/lib
-export PATH=/data/data/com.termux/files/usr/bin:$PATH
-/data/data/com.termux/files/usr/bin/python main.py --browser
-RUNSCRIPT
+# Make run.sh executable
 chmod +x "$INSTALL_DIR/run.sh"
 
 read -p "Start now? (y/n): " start
