@@ -55,9 +55,13 @@ git clone https://github.com/risunCode/Deadnet-Windows.git "$INSTALL_DIR" || {
     exit 1
 }
 
-# Add alias for easy run
-ALIAS_CMD='alias deadnet="su -c \"/data/data/com.termux/files/usr/bin/python /data/data/com.termux/files/home/deadnet/main.py --browser\""'
-grep -q "alias deadnet" "$HOME/.bashrc" 2>/dev/null || echo "$ALIAS_CMD" >> "$HOME/.bashrc"
+# Create wrapper script in Termux bin
+WRAPPER="/data/data/com.termux/files/usr/bin/deadnet"
+cat > "$WRAPPER" << 'WRAPPER_SCRIPT'
+#!/data/data/com.termux/files/usr/bin/bash
+su -c "/data/data/com.termux/files/usr/bin/python /data/data/com.termux/files/home/deadnet/main.py --browser"
+WRAPPER_SCRIPT
+chmod +x "$WRAPPER"
 
 echo ""
 echo -e "${GREEN}=========================================="
