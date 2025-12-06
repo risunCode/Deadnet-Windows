@@ -3,6 +3,8 @@ package com.deadnet.app;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -11,13 +13,20 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
-import android.widget.Toast;
+import android.widget.TextView;
 import java.io.File;
+
+import com.chaquo.python.Python;
+import com.chaquo.python.android.AndroidPlatform;
 
 public class MainActivity extends Activity {
     private WebView webView;
     private ProgressBar progressBar;
+    private TextView statusText;
     private static final String SERVER_URL = "http://127.0.0.1:5000";
+    private static final int SERVER_PORT = 5000;
+    private Thread serverThread;
+    private boolean serverRunning = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,13 +49,18 @@ public class MainActivity extends Activity {
         
         webView = findViewById(R.id.webView);
         progressBar = findViewById(R.id.progressBar);
+        statusText = findViewById(R.id.statusText);
+        
+        // Initialize Python
+        if (!Python.isStarted()) {
+            Python.start(new AndroidPlatform(this));
+        }
         
         setupWebView();
-        loadServer();
+        startServer();
     }
     
     private boolean isRooted() {
-        // Check common root paths
         String[] paths = {
             "/system/app/Superuser.apk",
             "/sbin/su",
@@ -68,7 +82,6 @@ public class MainActivity extends Activity {
             }
         }
         
-        // Try executing su
         try {
             Process process = Runtime.getRuntime().exec(new String[]{"su", "-c", "id"});
             process.waitFor();
@@ -97,12 +110,14 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                showConnectionError();
+                // Retry after delay
+                new Handler(Looper.getMainLooper()).postDelayed(() -> loadServer(), 1000);
             }
             
             @Override
             public void onPageFinished(WebView view, String url) {
                 progressBar.setVisibility(View.GONE);
+                statusText.setVisibility(View.GONE);
                 webView.setVisibility(View.VISIBLE);
             }
         });
@@ -114,21 +129,33 @@ public class MainActivity extends Activity {
             }
         });
     }
-
-    private void loadServer() {
-        progressBar.setVisibility(View.VISIBLE);
-        webView.setVisibility(View.GONE);
-        webView.loadUrl(SERVER_URL);
+    
+    private void startServer() {
+        statusText.setText("Starting DeadNet server...");
+        
+        serverThread = new Thread(() -> {
+            try {
+                Python py = Python.getInstance();
+                py.getModule("deadnet_server").callAttr("start_server", SERVER_PORT);
+                serverRunning = true;
+            } catch (Exception e) {
+                e.printStackTrace();
+                runOnUiThread(() -> {
+                    statusText.setText("Server error: " + e.getMessage());
+                });
+            }
+        });
+        serverThread.start();
+        
+        // Wait for server to start, then load WebView
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            statusText.setText("Loading interface...");
+            loadServer();
+        }, 2000);
     }
 
-    private void showConnectionError() {
-        new AlertDialog.Builder(this)
-            .setTitle("Connection Error")
-            .setMessage("Cannot connect to DeadNet server.\n\nMake sure you run 'deadnet' in Termux first!")
-            .setPositiveButton("Retry", (d, w) -> loadServer())
-            .setNegativeButton("Exit", (d, w) -> finish())
-            .setCancelable(false)
-            .show();
+    private void loadServer() {
+        webView.loadUrl(SERVER_URL);
     }
 
     @Override
@@ -138,10 +165,29 @@ public class MainActivity extends Activity {
         } else {
             new AlertDialog.Builder(this)
                 .setTitle("Exit DeadNet?")
-                .setMessage("Server will keep running in Termux.")
-                .setPositiveButton("Exit", (d, w) -> finish())
+                .setMessage("This will stop the server.")
+                .setPositiveButton("Exit", (d, w) -> {
+                    stopServer();
+                    finish();
+                })
                 .setNegativeButton("Cancel", null)
                 .show();
         }
+    }
+    
+    private void stopServer() {
+        try {
+            Python py = Python.getInstance();
+            py.getModule("deadnet_server").callAttr("stop_server");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        serverRunning = false;
+    }
+    
+    @Override
+    protected void onDestroy() {
+        stopServer();
+        super.onDestroy();
     }
 }
