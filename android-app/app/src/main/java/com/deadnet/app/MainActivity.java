@@ -12,6 +12,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+import java.io.File;
 
 public class MainActivity extends Activity {
     private WebView webView;
@@ -29,6 +30,12 @@ public class MainActivity extends Activity {
             WindowManager.LayoutParams.FLAG_FULLSCREEN
         );
         
+        // Check root first
+        if (!isRooted()) {
+            showRootRequiredDialog();
+            return;
+        }
+        
         setContentView(R.layout.activity_main);
         
         webView = findViewById(R.id.webView);
@@ -36,6 +43,48 @@ public class MainActivity extends Activity {
         
         setupWebView();
         loadServer();
+    }
+    
+    private boolean isRooted() {
+        // Check common root paths
+        String[] paths = {
+            "/system/app/Superuser.apk",
+            "/sbin/su",
+            "/system/bin/su",
+            "/system/xbin/su",
+            "/data/local/xbin/su",
+            "/data/local/bin/su",
+            "/system/sd/xbin/su",
+            "/system/bin/failsafe/su",
+            "/data/local/su",
+            "/su/bin/su",
+            "/data/adb/magisk",
+            "/data/adb/ksu"
+        };
+        
+        for (String path : paths) {
+            if (new File(path).exists()) {
+                return true;
+            }
+        }
+        
+        // Try executing su
+        try {
+            Process process = Runtime.getRuntime().exec(new String[]{"su", "-c", "id"});
+            process.waitFor();
+            return process.exitValue() == 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    private void showRootRequiredDialog() {
+        new AlertDialog.Builder(this)
+            .setTitle("Root Required")
+            .setMessage("DeadNet requires root access for network attacks.\n\nPlease root your device using Magisk or KernelSU.")
+            .setPositiveButton("OK", (d, w) -> finish())
+            .setCancelable(false)
+            .show();
     }
 
     private void setupWebView() {
