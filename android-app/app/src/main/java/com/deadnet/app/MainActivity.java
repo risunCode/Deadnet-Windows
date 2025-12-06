@@ -140,8 +140,9 @@ public class MainActivity extends Activity {
                 serverRunning = true;
             } catch (Exception e) {
                 e.printStackTrace();
+                final String errorMsg = e.getMessage();
                 runOnUiThread(() -> {
-                    statusText.setText("Server error: " + e.getMessage());
+                    showServerErrorDialog(errorMsg);
                 });
             }
         });
@@ -151,7 +152,17 @@ public class MainActivity extends Activity {
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             statusText.setText("Loading interface...");
             loadServer();
-        }, 2000);
+        }, 3000);
+    }
+    
+    private void showServerErrorDialog(String error) {
+        new AlertDialog.Builder(this)
+            .setTitle("Server Error")
+            .setMessage("Failed to start DeadNet server.\n\nError: " + error + "\n\nThis may be due to:\n- Port already in use\n- Permission denied\n- Missing dependencies")
+            .setPositiveButton("Retry", (d, w) -> startServer())
+            .setNegativeButton("Exit", (d, w) -> finish())
+            .setCancelable(false)
+            .show();
     }
 
     private void loadServer() {

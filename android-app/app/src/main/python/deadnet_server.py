@@ -310,7 +310,23 @@ def start_server(port=5000):
     server_running = True
     logger.info(f"Starting DeadNet server on port {port}")
     logger.info(f"Serving static files from: {DIST_DIR}")
-    app.run(host='127.0.0.1', port=port, debug=False, threaded=True, use_reloader=False)
+    
+    # Try multiple ports if default fails
+    ports_to_try = [port, 8080, 8000, 9000, 5050]
+    
+    for p in ports_to_try:
+        try:
+            logger.info(f"Trying port {p}...")
+            app.run(host='127.0.0.1', port=p, debug=False, threaded=True, use_reloader=False)
+            break
+        except OSError as e:
+            if "Address already in use" in str(e) or "Permission denied" in str(e):
+                logger.warning(f"Port {p} failed: {e}")
+                continue
+            raise
+        except Exception as e:
+            logger.error(f"Server error: {e}")
+            raise
 
 
 def stop_server():
