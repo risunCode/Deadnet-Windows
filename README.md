@@ -148,9 +148,7 @@ cd ~/deadnet && su -c "$(which python) main.py --browser"
 <summary><b>🗑️ Uninstall (click to expand)</b></summary>
 
 ```bash
-rm -rf ~/deadnet
-pip uninstall -y scapy netifaces flask flask-cors
-sed -i '/alias deadnet/d' ~/.bashrc
+rm -rf ~/deadnet && sed -i '/alias deadnet/d' ~/.bashrc
 ```
 
 </details>
