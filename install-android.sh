@@ -47,17 +47,17 @@ if [ "$(id -u)" != "0" ]; then
     fi
 fi
 
-echo -e "${BLUE}[1/6]${NC} Updating packages..."
+echo -e "${BLUE}[1/4]${NC} Updating packages..."
 pkg update -y
 
-echo -e "${BLUE}[2/6]${NC} Installing dependencies..."
-pkg install -y python nodejs git root-repo
+echo -e "${BLUE}[2/4]${NC} Installing dependencies..."
+pkg install -y python git root-repo
 
-echo -e "${BLUE}[3/6]${NC} Installing Python packages..."
+echo -e "${BLUE}[3/4]${NC} Installing Python packages..."
 pip install --upgrade pip
 pip install scapy netifaces2 flask flask-cors
 
-echo -e "${BLUE}[4/6]${NC} Cloning DeadNet..."
+echo -e "${BLUE}[4/4]${NC} Cloning DeadNet..."
 INSTALL_DIR="$HOME/deadnet"
 if [ -d "$INSTALL_DIR" ]; then
     echo "    Updating existing installation..."
@@ -68,11 +68,7 @@ else
     cd "$INSTALL_DIR"
 fi
 
-echo -e "${BLUE}[5/6]${NC} Installing Node dependencies..."
-npm install
-
-echo -e "${BLUE}[6/6]${NC} Building web assets..."
-npm run build
+# Web assets (dist/) are pre-built in repo - no npm needed!
 
 # Create launcher script
 cat > "$INSTALL_DIR/deadnet" << 'LAUNCHER'
