@@ -136,7 +136,8 @@ public class MainActivity extends Activity {
         serverThread = new Thread(() -> {
             try {
                 Python py = Python.getInstance();
-                py.getModule("deadnet_server").callAttr("start_server", SERVER_PORT);
+                // Use main.py - minimal entry point that loads fast
+                py.getModule("main").callAttr("start_server", SERVER_PORT);
                 serverRunning = true;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -189,7 +190,7 @@ public class MainActivity extends Activity {
     private void stopServer() {
         try {
             Python py = Python.getInstance();
-            py.getModule("deadnet_server").callAttr("stop_server");
+            py.getModule("main").callAttr("stop_server");
         } catch (Exception e) {
             e.printStackTrace();
         }
