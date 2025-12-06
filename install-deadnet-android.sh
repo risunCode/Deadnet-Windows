@@ -61,11 +61,24 @@ echo "  Installation Complete!"
 echo "==========================================${NC}"
 echo ""
 echo -e "  Run DeadNet:"
+echo -e "  ${YELLOW}su -c \"sh ~/deadnet/run.sh\"${NC}"
+echo ""
+echo -e "  Or manually:"
 echo -e "  ${YELLOW}su${NC}"
-echo -e "  ${YELLOW}cd /data/data/com.termux/files/home/deadnet && /data/data/com.termux/files/usr/bin/python main.py --browser${NC}"
+echo -e "  ${YELLOW}sh /data/data/com.termux/files/home/deadnet/run.sh${NC}"
 echo ""
 echo -e "  Then open: ${BLUE}http://127.0.0.1:5000${NC}"
 echo ""
+
+# Create run script
+cat > "$INSTALL_DIR/run.sh" << 'RUNSCRIPT'
+#!/system/bin/sh
+cd /data/data/com.termux/files/home/deadnet
+export LD_LIBRARY_PATH=/data/data/com.termux/files/usr/lib
+export PATH=/data/data/com.termux/files/usr/bin:$PATH
+/data/data/com.termux/files/usr/bin/python main.py --browser
+RUNSCRIPT
+chmod +x "$INSTALL_DIR/run.sh"
 
 read -p "Start now? (y/n): " start
 if [ "$start" = "y" ]; then
@@ -73,5 +86,5 @@ if [ "$start" = "y" ]; then
     echo -e "${BLUE}[*] Starting...${NC}"
     echo "    Open browser: http://127.0.0.1:5000"
     echo ""
-    su -c "cd /data/data/com.termux/files/home/deadnet && /data/data/com.termux/files/usr/bin/python main.py --browser"
+    su -c "sh /data/data/com.termux/files/home/deadnet/run.sh"
 fi

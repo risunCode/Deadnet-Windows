@@ -110,13 +110,17 @@ chmod +x launcher.sh && sudo ./launcher.sh
 
 **One-Line Install:**
 ```bash
-pkg update && pkg install -y python git wget clang libffi openssl && wget -qO- https://raw.githubusercontent.com/risunCode/Deadnet-Windows/main/install-android.sh | bash
+pkg update && pkg install -y python git wget clang libffi openssl && wget -qO- https://raw.githubusercontent.com/risunCode/Deadnet-Windows/main/install-deadnet-android.sh | bash
 ```
 
 **Run DeadNet:**
 ```bash
-su
-cd /data/data/com.termux/files/home/deadnet && /data/data/com.termux/files/usr/bin/python main.py --browser
+su -c "sh ~/deadnet/run.sh"
+```
+
+**Update DeadNet:**
+```bash
+cd ~/deadnet && git pull
 ```
 Then open browser: `http://127.0.0.1:5000`
 
