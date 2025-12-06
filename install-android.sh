@@ -27,10 +27,29 @@ if [ ! -d "/data/data/com.termux" ]; then
     exit 1
 fi
 
-# Check/install tsu for root
-if ! command -v tsu &> /dev/null && ! command -v su &> /dev/null; then
-    echo -e "${YELLOW}[!] Installing tsu for root access...${NC}"
-    pkg install -y tsu
+# Check root access
+echo -e "${BLUE}[*]${NC} Checking root access..."
+HAS_ROOT=false
+if command -v su &> /dev/null; then
+    # Test if su actually works
+    if su -c "id" &>/dev/null; then
+        echo -e "${GREEN}[+] Root available (su)${NC}"
+        HAS_ROOT=true
+    fi
+fi
+
+if [ "$HAS_ROOT" = false ]; then
+    echo -e "${RED}[!] Root NOT detected!${NC}"
+    echo -e "${YELLOW}    DeadNet requires root for network attacks.${NC}"
+    echo ""
+    echo "    Make sure your device is rooted (Magisk/KernelSU)"
+    echo "    and Termux has root permission."
+    echo ""
+    read -p "    Continue anyway? (y/n): " cont
+    if [ "$cont" != "y" ]; then
+        echo "Aborted."
+        exit 1
+    fi
 fi
 
 echo -e "${BLUE}[1/3]${NC} Installing dependencies..."
