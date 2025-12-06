@@ -120,7 +120,7 @@ su -c "sh ~/deadnet/run.sh"
 
 **Update DeadNet:**
 ```bash
-cd ~/deadnet && git pull
+cd ~/deadnet && git pull && chmod +x run.sh
 ```
 Then open browser: `http://127.0.0.1:5000`
 
