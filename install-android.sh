@@ -53,10 +53,10 @@ if [ "$HAS_ROOT" = false ]; then
 fi
 
 echo -e "${BLUE}[1/3]${NC} Installing dependencies..."
-pkg update -y && pkg install -y python git root-repo tsu
+pkg update -y && pkg install -y python git root-repo tsu clang python-pip libffi openssl
 
 echo -e "${BLUE}[2/3]${NC} Installing Python packages..."
-pip install scapy netifaces2 flask flask-cors
+pip install scapy netifaces flask flask-cors
 
 echo -e "${BLUE}[3/3]${NC} Cloning DeadNet..."
 INSTALL_DIR="$HOME/deadnet"
