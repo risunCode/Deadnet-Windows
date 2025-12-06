@@ -19,12 +19,16 @@ from flask_cors import CORS
 IS_FROZEN = getattr(sys, 'frozen', False)
 
 if IS_FROZEN:
-    BASE_DIR = os.path.dirname(sys.executable)
+    # PyInstaller extracts to temp folder, use _MEIPASS for bundled files
+    BASE_DIR = sys._MEIPASS
+    # For log file, use exe directory
+    EXE_DIR = os.path.dirname(sys.executable)
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    EXE_DIR = BASE_DIR
 
 # Setup logging to file for frozen exe (no console)
-LOG_FILE = os.path.join(BASE_DIR, 'deadnet.log')
+LOG_FILE = os.path.join(EXE_DIR, 'deadnet.log')
 if IS_FROZEN:
     logging.basicConfig(
         level=logging.INFO,
@@ -452,48 +456,105 @@ def shutdown_app():
     return jsonify({'success': True, 'message': 'Shutting down'})
 
 # Scanner State
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import socket
+import subprocess
+
 scanner_state = {
     'scanning': False,
     'devices': [],
     'last_scan': None,
-    'subnet': None
+    'subnet': None,
+    'progress': 0,
+    'total': 0
 }
 scanner_lock = threading.Lock()
 
-def get_mac_vendor(mac):
-    """Get vendor from MAC address (first 3 octets)"""
-    vendors = {
-        '00:50:56': 'VMware', '00:0c:29': 'VMware', '00:1c:42': 'Parallels',
-        '08:00:27': 'VirtualBox', '52:54:00': 'QEMU/KVM',
-        'b8:27:eb': 'Raspberry Pi', 'dc:a6:32': 'Raspberry Pi',
-        '00:1a:79': 'Apple', '00:03:93': 'Apple', 'f8:ff:c2': 'Apple',
-        '3c:06:30': 'Apple', '00:17:f2': 'Apple', 'a4:83:e7': 'Apple',
-        '00:e0:4c': 'Realtek', '52:54:00': 'Realtek',
-        '00:1b:21': 'Intel', '00:1e:67': 'Intel', '00:15:17': 'Intel',
-        '00:50:f2': 'Microsoft', '00:0d:3a': 'Microsoft',
-        '00:1d:d8': 'Microsoft', '00:12:5a': 'Microsoft',
-        '00:26:b9': 'Dell', '00:14:22': 'Dell', 'f8:db:88': 'Dell',
-        '00:1e:68': 'HP', '00:21:5a': 'HP', '3c:d9:2b': 'HP',
-        '00:1c:c0': 'Cisco', '00:1b:d4': 'Cisco', '00:26:0b': 'Cisco',
-        '00:1a:2b': 'Cisco', '00:1e:bd': 'Cisco',
-        '00:24:b2': 'Netgear', '00:1f:33': 'Netgear',
-        '00:1d:7e': 'Linksys', '00:1a:70': 'Linksys',
-        '00:1e:58': 'D-Link', '00:22:b0': 'D-Link',
-        '00:1f:1f': 'TP-Link', '50:c7:bf': 'TP-Link', 'c0:25:e9': 'TP-Link',
-        '00:18:e7': 'Samsung', '00:21:19': 'Samsung', '00:26:37': 'Samsung',
-        '00:1e:75': 'LG', '00:1c:62': 'LG',
-        '00:1a:8c': 'ASUS', '00:1f:c6': 'ASUS', '00:23:54': 'ASUS',
-        '00:1d:60': 'ASUS', '00:22:15': 'ASUS',
-        '00:1f:d0': 'Xiaomi', '64:b4:73': 'Xiaomi', '78:11:dc': 'Xiaomi',
-        '00:1a:11': 'Google', '00:1a:6b': 'Google', 'f4:f5:d8': 'Google',
-        '00:bb:3a': 'Amazon', '74:c2:46': 'Amazon', 'a0:02:dc': 'Amazon',
-    }
-    prefix = mac[:8].lower()
-    return vendors.get(prefix, 'Unknown')
+# Extended vendor database
+MAC_VENDORS = {
+    '00:50:56': 'VMware', '00:0c:29': 'VMware', '00:1c:42': 'Parallels',
+    '08:00:27': 'VirtualBox', '52:54:00': 'QEMU/KVM',
+    'b8:27:eb': 'Raspberry Pi', 'dc:a6:32': 'Raspberry Pi', 'e4:5f:01': 'Raspberry Pi',
+    '00:1a:79': 'Apple', '00:03:93': 'Apple', 'f8:ff:c2': 'Apple',
+    '3c:06:30': 'Apple', '00:17:f2': 'Apple', 'a4:83:e7': 'Apple',
+    'ac:de:48': 'Apple', '00:1e:c2': 'Apple', '00:25:bc': 'Apple',
+    '00:e0:4c': 'Realtek', '52:54:00': 'Realtek', '00:0e:c6': 'Realtek',
+    '00:1b:21': 'Intel', '00:1e:67': 'Intel', '00:15:17': 'Intel',
+    '00:1f:3b': 'Intel', '00:22:fa': 'Intel', '3c:97:0e': 'Intel',
+    '00:50:f2': 'Microsoft', '00:0d:3a': 'Microsoft', '00:1d:d8': 'Microsoft',
+    '00:12:5a': 'Microsoft', '00:15:5d': 'Microsoft', '28:18:78': 'Microsoft',
+    '00:26:b9': 'Dell', '00:14:22': 'Dell', 'f8:db:88': 'Dell',
+    '00:1e:68': 'HP', '00:21:5a': 'HP', '3c:d9:2b': 'HP', '00:1a:4b': 'HP',
+    '00:1c:c0': 'Cisco', '00:1b:d4': 'Cisco', '00:26:0b': 'Cisco',
+    '00:24:b2': 'Netgear', '00:1f:33': 'Netgear', '00:1e:2a': 'Netgear',
+    '00:1d:7e': 'Linksys', '00:1a:70': 'Linksys', '00:14:bf': 'Linksys',
+    '00:1e:58': 'D-Link', '00:22:b0': 'D-Link', '00:1c:f0': 'D-Link',
+    '00:1f:1f': 'TP-Link', '50:c7:bf': 'TP-Link', 'c0:25:e9': 'TP-Link',
+    '14:cc:20': 'TP-Link', 'ec:08:6b': 'TP-Link', '60:e3:27': 'TP-Link',
+    '00:18:e7': 'Samsung', '00:21:19': 'Samsung', '00:26:37': 'Samsung',
+    '5c:3c:27': 'Samsung', '84:25:db': 'Samsung', 'a8:06:00': 'Samsung',
+    '00:1e:75': 'LG', '00:1c:62': 'LG', '10:68:3f': 'LG',
+    '00:1a:8c': 'ASUS', '00:1f:c6': 'ASUS', '00:23:54': 'ASUS',
+    '00:1f:d0': 'Xiaomi', '64:b4:73': 'Xiaomi', '78:11:dc': 'Xiaomi',
+    '00:1a:11': 'Google', 'f4:f5:d8': 'Google', '94:eb:2c': 'Google',
+    '00:bb:3a': 'Amazon', '74:c2:46': 'Amazon', 'a0:02:dc': 'Amazon',
+    '00:fc:8b': 'Amazon', '44:65:0d': 'Amazon', 'fc:65:de': 'Amazon',
+    '00:1a:2b': 'Huawei', '00:e0:fc': 'Huawei', '00:25:9e': 'Huawei',
+    '48:46:fb': 'Huawei', '70:72:3c': 'Huawei', 'e4:68:a3': 'Huawei',
+    '00:1e:10': 'OPPO', '00:08:22': 'OPPO', 'a4:77:33': 'OPPO',
+    '00:27:15': 'Vivo', '00:09:df': 'Vivo', '98:6c:f5': 'Vivo',
+    '00:1a:6d': 'Motorola', '00:04:0e': 'Motorola', '00:0c:e5': 'Motorola',
+    '00:1e:4c': 'Sony', '00:13:a9': 'Sony', '00:1d:ba': 'Sony',
+    '00:1b:77': 'Lenovo', '00:09:2d': 'Lenovo', '00:0b:82': 'Lenovo',
+}
 
-def scan_network_arp(interface, timeout=3):
-    """Scan network using ARP requests"""
-    devices = []
+def get_mac_vendor(mac):
+    """Get vendor from MAC address"""
+    prefix = mac[:8].lower()
+    return MAC_VENDORS.get(prefix, 'Unknown')
+
+def get_arp_cache():
+    """Get devices from system ARP cache (instant)"""
+    devices = {}
+    try:
+        if os_is_windows():
+            result = subprocess.run(['arp', '-a'], capture_output=True, text=True, timeout=5)
+            for line in result.stdout.split('\n'):
+                parts = line.split()
+                if len(parts) >= 2:
+                    ip = parts[0]
+                    mac = parts[1] if len(parts) > 1 else ''
+                    if '.' in ip and ('-' in mac or ':' in mac):
+                        mac = mac.replace('-', ':').upper()
+                        if mac != 'FF:FF:FF:FF:FF:FF':
+                            devices[ip] = mac
+        else:
+            result = subprocess.run(['arp', '-n'], capture_output=True, text=True, timeout=5)
+            for line in result.stdout.split('\n'):
+                parts = line.split()
+                if len(parts) >= 3 and '.' in parts[0]:
+                    ip, mac = parts[0], parts[2].upper()
+                    if mac != 'FF:FF:FF:FF:FF:FF' and ':' in mac:
+                        devices[ip] = mac
+    except:
+        pass
+    return devices
+
+def arp_ping_host(ip, interface, timeout=1):
+    """Send ARP request to single host"""
+    try:
+        ans, _ = srp(Ether(dst="ff:ff:ff:ff:ff:ff")/ARP(pdst=ip), 
+                     iface=interface, timeout=timeout, verbose=0)
+        if ans:
+            return {'ip': ip, 'mac': ans[0][1].hwsrc.upper()}
+    except:
+        pass
+    return None
+
+def scan_network_fast(interface, timeout=2, max_workers=50):
+    """Fast multi-threaded network scan"""
+    devices = {}
+    
     try:
         # Get interface info
         iface_info = None
@@ -503,57 +564,89 @@ def scan_network_arp(interface, timeout=3):
                 break
         
         if not iface_info or not iface_info.get('ip'):
-            return devices
+            return []
         
-        # Calculate subnet
-        ip = iface_info['ip']
-        subnet = '.'.join(ip.split('.')[:3]) + '.0/24'
+        my_ip = iface_info['ip']
+        gateway = iface_info.get('gateway', '')
+        base_ip = '.'.join(my_ip.split('.')[:3])
+        subnet = f"{base_ip}.0/24"
         
         with scanner_lock:
             scanner_state['subnet'] = subnet
+            scanner_state['progress'] = 0
+            scanner_state['total'] = 254
         
-        # ARP scan
-        arp = ARP(pdst=subnet)
-        ether = Ether(dst="ff:ff:ff:ff:ff:ff")
-        packet = ether/arp
+        # Step 1: Get ARP cache first (instant results)
+        arp_cache = get_arp_cache()
+        for ip, mac in arp_cache.items():
+            if ip.startswith(base_ip):
+                devices[ip] = mac
         
-        result = srp(packet, timeout=timeout, iface=interface, verbose=0)[0]
+        # Update progress with cache results
+        with scanner_lock:
+            scanner_state['devices'] = [
+                {
+                    'ip': ip, 'mac': mac, 'vendor': get_mac_vendor(mac),
+                    'hostname': '', 'is_gateway': ip == gateway, 'is_self': ip == my_ip
+                }
+                for ip, mac in devices.items()
+            ]
         
-        gateway = iface_info.get('gateway', '')
+        # Step 2: Multi-threaded ARP scan for remaining hosts
+        ips_to_scan = [f"{base_ip}.{i}" for i in range(1, 255) if f"{base_ip}.{i}" not in devices]
         
-        for sent, received in result:
-            device = {
-                'ip': received.psrc,
-                'mac': received.hwsrc.upper(),
-                'vendor': get_mac_vendor(received.hwsrc),
-                'hostname': '',
-                'is_gateway': received.psrc == gateway,
-                'is_self': received.psrc == ip
-            }
+        scanned = 0
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {executor.submit(arp_ping_host, ip, interface, timeout): ip for ip in ips_to_scan}
             
-            # Try to get hostname (optional, may be slow)
-            try:
-                import socket
-                hostname = socket.gethostbyaddr(received.psrc)[0]
-                device['hostname'] = hostname[:30]
-            except:
-                pass
-            
-            devices.append(device)
+            for future in as_completed(futures):
+                scanned += 1
+                with scanner_lock:
+                    scanner_state['progress'] = len(devices) + scanned
+                
+                result = future.result()
+                if result:
+                    devices[result['ip']] = result['mac']
+                    # Update devices list in real-time
+                    with scanner_lock:
+                        scanner_state['devices'] = [
+                            {
+                                'ip': ip, 'mac': mac, 'vendor': get_mac_vendor(mac),
+                                'hostname': '', 'is_gateway': ip == gateway, 'is_self': ip == my_ip
+                            }
+                            for ip, mac in sorted(devices.items(), key=lambda x: [int(p) for p in x[0].split('.')])
+                        ]
         
-        # Sort by IP
-        devices.sort(key=lambda x: [int(p) for p in x['ip'].split('.')])
+        # Step 3: Resolve hostnames in background (optional, non-blocking)
+        def resolve_hostnames():
+            for device in scanner_state['devices']:
+                try:
+                    hostname = socket.gethostbyaddr(device['ip'])[0]
+                    device['hostname'] = hostname[:30]
+                except:
+                    pass
+        
+        threading.Thread(target=resolve_hostnames, daemon=True).start()
         
     except Exception as e:
-        print(f"Scan error: {e}")
+        logger.error(f"Scan error: {e}")
     
-    return devices
+    # Final sort
+    final_devices = [
+        {
+            'ip': ip, 'mac': mac, 'vendor': get_mac_vendor(mac),
+            'hostname': '', 'is_gateway': ip == gateway, 'is_self': ip == my_ip
+        }
+        for ip, mac in sorted(devices.items(), key=lambda x: [int(p) for p in x[0].split('.')])
+    ]
+    
+    return final_devices
 
 @app.route('/api/scanner/scan', methods=['POST'])
 def start_scan():
     data = request.json
     interface = data.get('interface')
-    timeout = data.get('timeout', 3)
+    timeout = data.get('timeout', 2)
     
     if not interface:
         return jsonify({'success': False, 'error': 'Interface required'}), 400
@@ -562,16 +655,19 @@ def start_scan():
         if scanner_state['scanning']:
             return jsonify({'success': False, 'error': 'Scan already in progress'}), 400
         scanner_state['scanning'] = True
+        scanner_state['devices'] = []
+        scanner_state['progress'] = 0
     
     def do_scan():
         try:
-            devices = scan_network_arp(interface, timeout)
+            devices = scan_network_fast(interface, timeout)
             with scanner_lock:
                 scanner_state['devices'] = devices
                 scanner_state['last_scan'] = time.time()
         finally:
             with scanner_lock:
                 scanner_state['scanning'] = False
+                scanner_state['progress'] = scanner_state['total']
     
     threading.Thread(target=do_scan, daemon=True).start()
     return jsonify({'success': True, 'message': 'Scan started'})
@@ -583,7 +679,9 @@ def get_scanner_status():
             'scanning': scanner_state['scanning'],
             'device_count': len(scanner_state['devices']),
             'last_scan': scanner_state['last_scan'],
-            'subnet': scanner_state['subnet']
+            'subnet': scanner_state['subnet'],
+            'progress': scanner_state.get('progress', 0),
+            'total': scanner_state.get('total', 254)
         })
 
 @app.route('/api/scanner/devices', methods=['GET'])

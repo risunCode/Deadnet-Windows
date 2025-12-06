@@ -56,12 +56,29 @@ async function loadInterfaces() {
 
 function showNetworkInfo(el, iface) {
   if (!iface) { el.innerHTML = '<span class="opacity-50">Select interface</span>'; return }
-  el.innerHTML = `
+  
+  let html = `
     <div class="info-row"><span>Interface</span><span>${iface.name}</span></div>
+    <div class="info-row"><span>Type</span><span class="capitalize">${iface.type || 'unknown'}</span></div>
     <div class="info-row"><span>IP</span><span>${iface.ip || '-'}</span></div>
     <div class="info-row"><span>Gateway</span><span>${iface.gateway || '-'}</span></div>
-    <div class="info-row"><span>MAC</span><span>${iface.mac || '-'}</span></div>
+    <div class="info-row"><span>MAC</span><span class="text-xs">${iface.mac || '-'}</span></div>
   `
+  
+  // Add WiFi info if available
+  if (iface.wifi) {
+    const w = iface.wifi
+    html += `
+      <div class="info-row mt-2 pt-2 border-t border-gray-700"><span>SSID</span><span>${w.ssid || '-'}</span></div>
+      <div class="info-row"><span>Band</span><span>${w.band || '-'}</span></div>
+      <div class="info-row"><span>Radio</span><span>${w.radio_type || '-'}</span></div>
+      <div class="info-row"><span>Channel</span><span>${w.channel || '-'}</span></div>
+      <div class="info-row"><span>Signal</span><span>${w.signal || '-'}</span></div>
+      <div class="info-row"><span>Speed</span><span>${w.rx_rate || '-'}</span></div>
+    `
+  }
+  
+  el.innerHTML = html
 }
 
 // ===== ATTACKER =====

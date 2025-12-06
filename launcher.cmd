@@ -144,25 +144,27 @@ echo.
     --add-data "dist;dist" ^
     --add-data "backend;backend" ^
     --hidden-import "netifaces" ^
-    --hidden-import "scapy" ^
     --hidden-import "scapy.all" ^
-    --hidden-import "scapy.layers.all" ^
+    --hidden-import "scapy.layers.l2" ^
     --hidden-import "scapy.layers.inet" ^
     --hidden-import "scapy.layers.inet6" ^
-    --hidden-import "scapy.layers.l2" ^
     --hidden-import "flask" ^
     --hidden-import "flask_cors" ^
     --hidden-import "webview" ^
     --hidden-import "webview.platforms.winforms" ^
     --hidden-import "pystray" ^
     --hidden-import "pystray._win32" ^
-    --hidden-import "PIL" ^
     --hidden-import "PIL.Image" ^
     --hidden-import "PIL.ImageDraw" ^
-    --hidden-import "clr" ^
-    --hidden-import "pythonnet" ^
-    --collect-all "scapy" ^
-    --collect-all "webview" ^
+    --exclude-module "tkinter" ^
+    --exclude-module "scapy.contrib" ^
+    --exclude-module "scapy.tools" ^
+    --exclude-module "scapy.modules" ^
+    --exclude-module "matplotlib" ^
+    --exclude-module "numpy" ^
+    --exclude-module "pandas" ^
+    --exclude-module "scipy" ^
+    --exclude-module "cryptography" ^
     --uac-admin ^
     main.py
 

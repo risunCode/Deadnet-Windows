@@ -9,11 +9,56 @@ from scapy.all import *
 from .misc_utils import os_is_windows
 
 
+def get_wifi_info():
+    """Get WiFi connection info (Windows)"""
+    wifi_info = {}
+    if not os_is_windows():
+        return wifi_info
+    
+    try:
+        result = subprocess.run(['netsh', 'wlan', 'show', 'interfaces'], 
+                              capture_output=True, text=True, timeout=5)
+        output = result.stdout
+        
+        for line in output.split('\n'):
+            line = line.strip()
+            if ':' in line:
+                key, _, value = line.partition(':')
+                key = key.strip().lower()
+                value = value.strip()
+                
+                if 'ssid' in key and 'bssid' not in key:
+                    wifi_info['ssid'] = value
+                elif 'bssid' in key:
+                    wifi_info['bssid'] = value
+                elif 'radio type' in key or 'tipo de rádio' in key:
+                    wifi_info['radio_type'] = value  # e.g., 802.11ax, 802.11ac
+                elif 'band' in key or 'banda' in key:
+                    wifi_info['band'] = value  # e.g., 2.4 GHz, 5 GHz
+                elif 'channel' in key or 'canal' in key:
+                    wifi_info['channel'] = value
+                elif 'receive rate' in key or 'taxa de recepção' in key:
+                    wifi_info['rx_rate'] = value
+                elif 'transmit rate' in key or 'taxa de transmissão' in key:
+                    wifi_info['tx_rate'] = value
+                elif 'signal' in key or 'sinal' in key:
+                    wifi_info['signal'] = value
+                elif 'authentication' in key or 'autenticação' in key:
+                    wifi_info['auth'] = value
+    except:
+        pass
+    
+    return wifi_info
+
+
 def get_network_interfaces():
     """Get all available network interfaces"""
     try:
         interfaces = netifaces.interfaces()
         interface_details = []
+        
+        # Get WiFi info once
+        wifi_info = get_wifi_info()
         
         for iface in interfaces:
             addrs = netifaces.ifaddresses(iface)
@@ -33,15 +78,25 @@ def get_network_interfaces():
             if ipv4 and ipv4 != '127.0.0.1' and not ipv4.startswith('169.254.'):
                 gateway = get_gateway_ipv4(iface)
                 
-                interface_details.append({
+                iface_data = {
                     'name': iface,
                     'ip': ipv4,
                     'ipv4': ipv4,
                     'mac': mac,
                     'subnet': subnet,
                     'gateway': gateway,
-                    'friendly_name': iface
-                })
+                    'friendly_name': iface,
+                    'wifi': None
+                }
+                
+                # Check if this is WiFi interface (has WiFi info)
+                if wifi_info and ('wi-fi' in iface.lower() or 'wlan' in iface.lower() or 'wireless' in iface.lower()):
+                    iface_data['wifi'] = wifi_info
+                    iface_data['type'] = 'wifi'
+                else:
+                    iface_data['type'] = 'ethernet'
+                
+                interface_details.append(iface_data)
         
         return interface_details
     except Exception as e:
