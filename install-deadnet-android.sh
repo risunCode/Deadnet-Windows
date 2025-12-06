@@ -55,13 +55,17 @@ git clone https://github.com/risunCode/Deadnet-Windows.git "$INSTALL_DIR" || {
     exit 1
 }
 
+# Add alias for easy run
+ALIAS_CMD='alias deadnet="su -c \"/data/data/com.termux/files/usr/bin/python /data/data/com.termux/files/home/deadnet/main.py --browser\""'
+grep -q "alias deadnet" "$HOME/.bashrc" 2>/dev/null || echo "$ALIAS_CMD" >> "$HOME/.bashrc"
+
 echo ""
 echo -e "${GREEN}=========================================="
 echo "  Installation Complete!"
 echo "==========================================${NC}"
 echo ""
-echo -e "  Run DeadNet:"
-echo -e "  ${YELLOW}su -c \"/data/data/com.termux/files/usr/bin/python /data/data/com.termux/files/home/deadnet/main.py --browser\"${NC}"
+echo -e "  Run DeadNet (restart terminal first):"
+echo -e "  ${YELLOW}deadnet${NC}"
 echo ""
 echo -e "  Then open: ${BLUE}http://127.0.0.1:5000${NC}"
 echo ""

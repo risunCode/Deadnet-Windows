@@ -115,8 +115,9 @@ pkg update && pkg install -y python git wget clang libffi openssl && wget -qO- h
 
 **Run DeadNet:**
 ```bash
-su -c "/data/data/com.termux/files/usr/bin/python /data/data/com.termux/files/home/deadnet/main.py --browser"
+deadnet
 ```
+(restart terminal after install, or run `source ~/.bashrc` first)
 
 **Update DeadNet:**
 ```bash
@@ -144,8 +145,9 @@ git clone https://github.com/risunCode/Deadnet-Windows.git ~/deadnet
 
 **Step 4: Run**
 ```bash
-su -c "/data/data/com.termux/files/usr/bin/python /data/data/com.termux/files/home/deadnet/main.py --browser"
+deadnet
 ```
+Or full command: `su -c "/data/data/com.termux/files/usr/bin/python /data/data/com.termux/files/home/deadnet/main.py --browser"`
 
 </details>
 
