@@ -20,16 +20,29 @@ from backend.defines import *
 from backend.misc_utils import is_admin, os_is_windows, get_ts_ms
 from backend.network_utils import get_network_interfaces, get_gateway_ipv4, get_gateway_mac, generate_host_ips
 
-# Try import scapy
-try:
-    from scapy.all import *
-    conf.verb = 0
-    SCAPY_AVAILABLE = True
-    from backend.attacker import DeadNetAttacker
-    from backend.detector import PacketDetector
-except Exception as e:
-    logger.warning(f"Scapy not available: {e}")
-    SCAPY_AVAILABLE = False
+# Lazy load scapy - don't import at top level to avoid permission errors
+SCAPY_AVAILABLE = False
+DeadNetAttacker = None
+PacketDetector = None
+
+def init_scapy():
+    """Initialize scapy modules - call this only when needed"""
+    global SCAPY_AVAILABLE, DeadNetAttacker, PacketDetector
+    if SCAPY_AVAILABLE:
+        return True
+    try:
+        from scapy.all import conf
+        conf.verb = 0
+        from backend.attacker import DeadNetAttacker as Attacker
+        from backend.detector import PacketDetector as Detector
+        DeadNetAttacker = Attacker
+        PacketDetector = Detector
+        SCAPY_AVAILABLE = True
+        logger.info("Scapy initialized successfully")
+        return True
+    except Exception as e:
+        logger.warning(f"Scapy not available: {e}")
+        return False
 
 # Get the directory where this script is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -101,8 +114,9 @@ def get_interfaces():
 def start_attack():
     global current_attacker
     
-    if not SCAPY_AVAILABLE:
-        return jsonify({'success': False, 'error': 'Scapy not available on this device'}), 400
+    # Lazy init scapy when attack starts
+    if not init_scapy():
+        return jsonify({'success': False, 'error': 'Scapy not available - need root access'}), 400
     
     data = request.json
     iface = data.get('interface')
@@ -192,8 +206,9 @@ def get_flagged():
 def start_defender():
     global detector, sniffer
     
-    if not SCAPY_AVAILABLE:
-        return jsonify({'success': False, 'error': 'Scapy not available'}), 400
+    # Lazy init scapy when defender starts
+    if not init_scapy():
+        return jsonify({'success': False, 'error': 'Scapy not available - need root access'}), 400
     
     data = request.json
     iface = data.get('interface')
@@ -216,6 +231,9 @@ def start_defender():
     def run_monitor():
         global detector, sniffer
         try:
+            # Import scapy components here (lazy load)
+            from scapy.all import AsyncSniffer, ARP
+            
             detector = PacketDetector(iface)
             
             def packet_callback(packet):
