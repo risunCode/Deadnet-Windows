@@ -106,31 +106,43 @@ chmod +x launcher.sh && sudo ./launcher.sh
 
 ### Android (Termux)
 
-**Requirements:**
-- [Termux](https://f-droid.org/packages/com.termux/) from F-Droid (NOT Play Store)
-- Rooted device (Magisk/KernelSU)
+**Requirements:** [Termux](https://f-droid.org/packages/com.termux/) from F-Droid + Rooted device (Magisk/KernelSU)
+
+**One-Line Install:**
+```bash
+pkg update && pkg install -y python git wget clang libffi openssl && wget -qO- https://raw.githubusercontent.com/risunCode/Deadnet-Windows/main/install-android.sh | bash
+```
+
+**Run DeadNet:**
+```bash
+cd ~/deadnet && su -c "python main.py --browser"
+```
+Then open browser: `http://127.0.0.1:5000`
+
+<details>
+<summary><b>📋 Manual Installation (click to expand)</b></summary>
 
 **Step 1: Install dependencies**
 ```bash
 pkg update && pkg install -y python git wget clang libffi openssl
 ```
 
-**Step 2: Download installer**
+**Step 2: Install Python packages**
 ```bash
-wget https://raw.githubusercontent.com/risunCode/Deadnet-Windows/main/install-android.sh
+pip install scapy netifaces flask flask-cors
 ```
 
-**Step 3: Run installer**
+**Step 3: Clone repository**
 ```bash
-bash install-android.sh
+git clone https://github.com/risunCode/Deadnet-Windows.git ~/deadnet
 ```
 
-**Run DeadNet (after install):**
+**Step 4: Run**
 ```bash
 cd ~/deadnet && su -c "python main.py --browser"
 ```
 
-Then open browser: `http://127.0.0.1:5000`
+</details>
 
 ---
 
