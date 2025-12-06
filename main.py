@@ -540,20 +540,29 @@ def get_arp_cache():
         pass
     return devices
 
-def arp_ping_host(ip, interface, timeout=1):
-    """Send ARP request to single host"""
-    try:
-        ans, _ = srp(Ether(dst="ff:ff:ff:ff:ff:ff")/ARP(pdst=ip), 
-                     iface=interface, timeout=timeout, verbose=0)
-        if ans:
-            return {'ip': ip, 'mac': ans[0][1].hwsrc.upper()}
-    except:
-        pass
-    return None
-
-def scan_network_fast(interface, timeout=2, max_workers=50):
-    """Fast multi-threaded network scan"""
+def arp_scan_broadcast(interface, subnet, timeout=3):
+    """Broadcast ARP scan - most reliable method"""
     devices = {}
+    try:
+        # Send ARP request to entire subnet at once
+        ans, _ = srp(Ether(dst="ff:ff:ff:ff:ff:ff")/ARP(pdst=subnet),
+                     iface=interface, timeout=timeout, verbose=0, retry=2)
+        
+        for sent, received in ans:
+            ip = received.psrc
+            mac = received.hwsrc.upper()
+            if mac != 'FF:FF:FF:FF:FF:FF':
+                devices[ip] = mac
+    except Exception as e:
+        logger.error(f"ARP scan error: {e}")
+    
+    return devices
+
+def scan_network_fast(interface, timeout=3):
+    """Fast network scan using broadcast ARP"""
+    devices = {}
+    my_ip = ''
+    gateway = ''
     
     try:
         # Get interface info
@@ -574,73 +583,63 @@ def scan_network_fast(interface, timeout=2, max_workers=50):
         with scanner_lock:
             scanner_state['subnet'] = subnet
             scanner_state['progress'] = 0
-            scanner_state['total'] = 254
+            scanner_state['total'] = 100
         
         # Step 1: Get ARP cache first (instant results)
+        logger.info("Reading ARP cache...")
         arp_cache = get_arp_cache()
         for ip, mac in arp_cache.items():
             if ip.startswith(base_ip):
                 devices[ip] = mac
         
-        # Update progress with cache results
         with scanner_lock:
-            scanner_state['devices'] = [
-                {
-                    'ip': ip, 'mac': mac, 'vendor': get_mac_vendor(mac),
-                    'hostname': '', 'is_gateway': ip == gateway, 'is_self': ip == my_ip
-                }
-                for ip, mac in devices.items()
-            ]
+            scanner_state['progress'] = 20
+            scanner_state['devices'] = build_device_list(devices, gateway, my_ip)
         
-        # Step 2: Multi-threaded ARP scan for remaining hosts
-        ips_to_scan = [f"{base_ip}.{i}" for i in range(1, 255) if f"{base_ip}.{i}" not in devices]
+        # Step 2: Broadcast ARP scan (most reliable)
+        logger.info(f"Scanning {subnet}...")
+        scanned = arp_scan_broadcast(interface, subnet, timeout)
+        devices.update(scanned)
         
-        scanned = 0
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {executor.submit(arp_ping_host, ip, interface, timeout): ip for ip in ips_to_scan}
-            
-            for future in as_completed(futures):
-                scanned += 1
-                with scanner_lock:
-                    scanner_state['progress'] = len(devices) + scanned
-                
-                result = future.result()
-                if result:
-                    devices[result['ip']] = result['mac']
-                    # Update devices list in real-time
-                    with scanner_lock:
-                        scanner_state['devices'] = [
-                            {
-                                'ip': ip, 'mac': mac, 'vendor': get_mac_vendor(mac),
-                                'hostname': '', 'is_gateway': ip == gateway, 'is_self': ip == my_ip
-                            }
-                            for ip, mac in sorted(devices.items(), key=lambda x: [int(p) for p in x[0].split('.')])
-                        ]
+        with scanner_lock:
+            scanner_state['progress'] = 80
+            scanner_state['devices'] = build_device_list(devices, gateway, my_ip)
         
-        # Step 3: Resolve hostnames in background (optional, non-blocking)
+        # Step 3: Resolve hostnames in background
         def resolve_hostnames():
-            for device in scanner_state['devices']:
-                try:
-                    hostname = socket.gethostbyaddr(device['ip'])[0]
-                    device['hostname'] = hostname[:30]
-                except:
-                    pass
+            with scanner_lock:
+                for device in scanner_state['devices']:
+                    try:
+                        hostname = socket.gethostbyaddr(device['ip'])[0]
+                        device['hostname'] = hostname[:30]
+                    except:
+                        pass
         
         threading.Thread(target=resolve_hostnames, daemon=True).start()
+        
+        with scanner_lock:
+            scanner_state['progress'] = 100
+        
+        logger.info(f"Found {len(devices)} devices")
         
     except Exception as e:
         logger.error(f"Scan error: {e}")
     
-    # Final sort
-    final_devices = [
+    return build_device_list(devices, gateway, my_ip)
+
+def build_device_list(devices, gateway, my_ip):
+    """Build sorted device list with metadata"""
+    return [
         {
-            'ip': ip, 'mac': mac, 'vendor': get_mac_vendor(mac),
-            'hostname': '', 'is_gateway': ip == gateway, 'is_self': ip == my_ip
+            'ip': ip, 
+            'mac': mac, 
+            'vendor': get_mac_vendor(mac),
+            'hostname': '', 
+            'is_gateway': ip == gateway, 
+            'is_self': ip == my_ip
         }
         for ip, mac in sorted(devices.items(), key=lambda x: [int(p) for p in x[0].split('.')])
     ]
-    
-    return final_devices
 
 @app.route('/api/scanner/scan', methods=['POST'])
 def start_scan():
