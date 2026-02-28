@@ -1,5 +1,0 @@
-# Force LF line endings for shell scripts
-*.sh text eol=lf
-run.sh text eol=lf
-launcher.sh text eol=lf
-install-deadnet-android.sh text eol=lf
