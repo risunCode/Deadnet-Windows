@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "deadnet-python"
+version = "2.1.0"
+description = "DeadNet Python-only cross-platform backend"
+requires-python = ">=3.11"
+dependencies = [
+  "flask>=3.0.0",
+  "flask-cors>=4.0.0",
+  "scapy>=2.5.0",
+  "netifaces>=0.11.0",
+]
+
+[project.optional-dependencies]
+webview = [
+  "pywebview>=5.0",
+]
+
+[tool.setuptools]
+packages = ["app", "app.api", "app.core", "app.infra"]
+
+[tool.setuptools.package-data]
+app = ["web/**"]
